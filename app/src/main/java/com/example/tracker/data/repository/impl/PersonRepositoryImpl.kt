@@ -2,7 +2,7 @@ package com.example.tracker.data.repository.impl
 
 import com.example.tracker.data.db.dao.PersonDao
 import com.example.tracker.data.model.Person
-import com.example.tracker.data.repository.PersonRepository
+import com.example.tracker.domain.repository.PersonRepository
 import kotlinx.coroutines.flow.Flow
 
 class PersonRepositoryImpl(private val dao: PersonDao) : PersonRepository {

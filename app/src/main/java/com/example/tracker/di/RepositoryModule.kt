@@ -1,14 +1,14 @@
 package com.example.tracker.di
 
-import com.example.tracker.data.repository.AccountRepository
-import com.example.tracker.data.repository.BudgetRepository
-import com.example.tracker.data.repository.CasualLoanRepository
-import com.example.tracker.data.repository.CategoryRepository
-import com.example.tracker.data.repository.FormalLoanRepository
-import com.example.tracker.data.repository.PersonRepository
-import com.example.tracker.data.repository.RecurringRuleRepository
-import com.example.tracker.data.repository.SubscriptionServiceRepository
-import com.example.tracker.data.repository.TransactionRepository
+import com.example.tracker.domain.repository.AccountRepository
+import com.example.tracker.domain.repository.BudgetRepository
+import com.example.tracker.domain.repository.CasualLoanRepository
+import com.example.tracker.domain.repository.CategoryRepository
+import com.example.tracker.domain.repository.FormalLoanRepository
+import com.example.tracker.domain.repository.PersonRepository
+import com.example.tracker.domain.repository.RecurringRuleRepository
+import com.example.tracker.domain.repository.SubscriptionServiceRepository
+import com.example.tracker.domain.repository.TransactionRepository
 import com.example.tracker.data.repository.impl.AccountRepositoryImpl
 import com.example.tracker.data.repository.impl.BudgetRepositoryImpl
 import com.example.tracker.data.repository.impl.CasualLoanRepositoryImpl

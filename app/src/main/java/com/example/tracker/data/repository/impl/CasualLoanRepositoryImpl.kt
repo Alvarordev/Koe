@@ -10,7 +10,7 @@ import com.example.tracker.data.model.CasualLoanTransaction
 import com.example.tracker.data.model.Transaction
 import com.example.tracker.data.model.relations.CasualLoanWithPerson
 import com.example.tracker.data.model.relations.PersonLoanSummary
-import com.example.tracker.data.repository.CasualLoanRepository
+import com.example.tracker.domain.repository.CasualLoanRepository
 import kotlinx.coroutines.flow.Flow
 
 class CasualLoanRepositoryImpl(

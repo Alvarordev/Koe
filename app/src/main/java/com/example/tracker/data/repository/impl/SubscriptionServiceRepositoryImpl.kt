@@ -2,7 +2,7 @@ package com.example.tracker.data.repository.impl
 
 import com.example.tracker.data.db.dao.SubscriptionServiceDao
 import com.example.tracker.data.model.SubscriptionService
-import com.example.tracker.data.repository.SubscriptionServiceRepository
+import com.example.tracker.domain.repository.SubscriptionServiceRepository
 import kotlinx.coroutines.flow.Flow
 
 class SubscriptionServiceRepositoryImpl(private val dao: SubscriptionServiceDao) : SubscriptionServiceRepository {

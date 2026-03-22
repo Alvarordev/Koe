@@ -1,4 +1,4 @@
-package com.example.tracker.data.repository
+package com.example.tracker.domain.repository
 
 import com.example.tracker.data.enums.TransactionType
 import com.example.tracker.data.model.Transaction

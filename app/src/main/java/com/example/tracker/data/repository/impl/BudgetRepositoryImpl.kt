@@ -3,7 +3,7 @@ package com.example.tracker.data.repository.impl
 import com.example.tracker.data.db.dao.BudgetDao
 import com.example.tracker.data.model.Budget
 import com.example.tracker.data.model.relations.BudgetWithCategory
-import com.example.tracker.data.repository.BudgetRepository
+import com.example.tracker.domain.repository.BudgetRepository
 import kotlinx.coroutines.flow.Flow
 
 class BudgetRepositoryImpl(private val dao: BudgetDao) : BudgetRepository {

@@ -9,7 +9,7 @@ import com.example.tracker.data.enums.TransactionType
 import com.example.tracker.data.model.RecurringRule
 import com.example.tracker.data.model.Transaction
 import com.example.tracker.data.model.relations.RecurringRuleWithDetails
-import com.example.tracker.data.repository.RecurringRuleRepository
+import com.example.tracker.domain.repository.RecurringRuleRepository
 import kotlinx.coroutines.flow.Flow
 import java.util.Calendar
 

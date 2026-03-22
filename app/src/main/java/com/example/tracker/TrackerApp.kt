@@ -3,6 +3,7 @@ package com.example.tracker
 import android.app.Application
 import com.example.tracker.di.databaseModule
 import com.example.tracker.di.repositoryModule
+import com.example.tracker.di.useCaseModule
 import com.example.tracker.di.viewModelModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -14,7 +15,7 @@ class TrackerApp : Application() {
         startKoin {
             androidLogger()
             androidContext(this@TrackerApp)
-            modules(databaseModule, repositoryModule, viewModelModule)
+            modules(databaseModule, repositoryModule, useCaseModule, viewModelModule)
         }
     }
 }

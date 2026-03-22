@@ -3,7 +3,7 @@ package com.example.tracker.data.repository.impl
 import com.example.tracker.data.db.dao.CategoryDao
 import com.example.tracker.data.enums.CategoryType
 import com.example.tracker.data.model.Category
-import com.example.tracker.data.repository.CategoryRepository
+import com.example.tracker.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
 
 class CategoryRepositoryImpl(private val dao: CategoryDao) : CategoryRepository {

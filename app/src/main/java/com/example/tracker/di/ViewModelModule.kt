@@ -1,7 +1,9 @@
 package com.example.tracker.di
 
+import com.example.tracker.presentation.home.HomeViewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val viewModelModule = module {
-    // Phase 2+ — ViewModels added as UI screens are built
+    viewModel { HomeViewModel(get()) }
 }

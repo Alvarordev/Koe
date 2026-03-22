@@ -1,4 +1,4 @@
-package com.example.tracker.data.repository
+package com.example.tracker.domain.repository
 
 import com.example.tracker.data.model.CasualLoan
 import com.example.tracker.data.model.CasualLoanTransaction

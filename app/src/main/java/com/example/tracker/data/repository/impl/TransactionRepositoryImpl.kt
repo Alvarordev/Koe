@@ -6,7 +6,7 @@ import com.example.tracker.data.enums.TransactionType
 import com.example.tracker.data.model.Transaction
 import com.example.tracker.data.model.relations.CategoryTotal
 import com.example.tracker.data.model.relations.TransactionWithDetails
-import com.example.tracker.data.repository.TransactionRepository
+import com.example.tracker.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 

@@ -6,7 +6,7 @@ import com.example.tracker.data.db.dao.TransactionDao
 import com.example.tracker.data.enums.PaymentStatus
 import com.example.tracker.data.model.FormalLoan
 import com.example.tracker.data.model.FormalLoanPayment
-import com.example.tracker.data.repository.FormalLoanRepository
+import com.example.tracker.domain.repository.FormalLoanRepository
 import kotlinx.coroutines.flow.Flow
 import java.util.Calendar
 

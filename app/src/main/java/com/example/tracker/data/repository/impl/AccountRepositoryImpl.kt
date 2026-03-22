@@ -4,7 +4,7 @@ import com.example.tracker.data.db.dao.AccountDao
 import com.example.tracker.data.enums.AccountType
 import com.example.tracker.data.model.Account
 import com.example.tracker.data.model.relations.CurrencyBalance
-import com.example.tracker.data.repository.AccountRepository
+import com.example.tracker.domain.repository.AccountRepository
 import kotlinx.coroutines.flow.Flow
 
 class AccountRepositoryImpl(private val dao: AccountDao) : AccountRepository {
