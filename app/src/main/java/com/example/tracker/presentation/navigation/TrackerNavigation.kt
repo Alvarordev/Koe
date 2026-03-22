@@ -3,8 +3,12 @@ package com.example.tracker.presentation.navigation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -14,16 +18,29 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.tracker.presentation.accounts.accountdetail.AccountDetailScreen
+import com.example.tracker.presentation.accounts.AccountsScreen
+import com.example.tracker.presentation.accounts.addaccount.AddAccountScreen
+import com.example.tracker.presentation.addtransaction.AddTransactionSheet
+import com.example.tracker.presentation.addtransaction.AddTransactionViewModel
 import com.example.tracker.presentation.home.HomeScreen
+import org.koin.androidx.compose.koinViewModel
 
 enum class TrackerTab(
     val route: String,
@@ -31,55 +48,98 @@ enum class TrackerTab(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    Home("home", "Home", Icons.Filled.Home, Icons.Outlined.Home)
+    Home("home", "Home", Icons.Filled.Home, Icons.Outlined.Home),
+    Accounts("accounts", "Accounts", Icons.Filled.AccountBalance, Icons.Outlined.AccountBalance)
 }
+
+private val bottomBarSuppressedRoutes = setOf("add_account", "account_detail/{accountId}")
 
 @Composable
 fun TrackerScaffold() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val currentRoute = currentDestination?.route
+
+    val addViewModel: AddTransactionViewModel = koinViewModel()
+    val addUiState by addViewModel.uiState.collectAsState()
+    var showSheet by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+
+    val tabFabActions: Map<String, () -> Unit> = mapOf(
+        TrackerTab.Home.route to { showSheet = true },
+        TrackerTab.Accounts.route to { navController.navigate("add_account") }
+    )
+
+    val showBottomBar = currentRoute !in bottomBarSuppressedRoutes
+    val currentTabRoute = TrackerTab.entries.firstOrNull { tab ->
+        currentDestination?.hierarchy?.any { it.route == tab.route } == true
+    }?.route ?: TrackerTab.Home.route
+
+    LaunchedEffect(addUiState.submitSuccess) {
+        if (addUiState.submitSuccess) {
+            showSheet = false
+            addViewModel.reset()
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = {
-            Column {
-                HorizontalDivider(
-                    thickness = 0.5.dp,
-                    color = MaterialTheme.colorScheme.outline
-                )
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 0.dp
+        floatingActionButton = {
+            if (showBottomBar) {
+                FloatingActionButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        tabFabActions[currentTabRoute]?.invoke()
+                    }
                 ) {
-                    TrackerTab.entries.forEach { tab ->
-                        val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
-                                    contentDescription = tab.label
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add"
+                    )
+                }
+            }
+        },
+        bottomBar = {
+            if (showBottomBar) {
+                Column {
+                    HorizontalDivider(
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    NavigationBar(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 0.dp
+                    ) {
+                        TrackerTab.entries.forEach { tab ->
+                            val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
+                            NavigationBarItem(
+                                selected = selected,
+                                onClick = {
+                                    navController.navigate(tab.route) {
+                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = {
+                                    Icon(
+                                        imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
+                                        contentDescription = tab.label
+                                    )
+                                },
+                                label = {
+                                    Text(text = tab.label, style = MaterialTheme.typography.labelMedium)
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer
                                 )
-                            },
-                            label = {
-                                Text(text = tab.label, style = MaterialTheme.typography.labelMedium)
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer
                             )
-                        )
+                        }
                     }
                 }
             }
@@ -93,6 +153,42 @@ fun TrackerScaffold() {
             composable(TrackerTab.Home.route) {
                 HomeScreen(contentPadding = innerPadding)
             }
+            composable(TrackerTab.Accounts.route) {
+                AccountsScreen(
+                    contentPadding = innerPadding,
+                    onAccountClick = { accountId ->
+                        navController.navigate("account_detail/$accountId")
+                    }
+                )
+            }
+            composable("add_account") {
+                AddAccountScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable("account_detail/{accountId}") { backStackEntry ->
+                val accountId = backStackEntry.arguments?.getString("accountId")?.toLongOrNull() ?: 0L
+                AccountDetailScreen(
+                    accountId = accountId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
         }
+    }
+
+    if (showSheet) {
+        AddTransactionSheet(
+            uiState = addUiState,
+            onCategorySelected = addViewModel::selectCategory,
+            onClearCategory = addViewModel::clearCategory,
+            onAccountSelected = addViewModel::selectAccount,
+            onKeyPress = addViewModel::onKeyPress,
+            onDescriptionChange = addViewModel::onDescriptionChange,
+            onSubmit = addViewModel::submit,
+            onDismiss = {
+                showSheet = false
+                addViewModel.reset()
+            }
+        )
     }
 }
