@@ -5,6 +5,6 @@ sealed class KeyboardKey {
     object Dot : KeyboardKey()
     object Delete : KeyboardKey()
     object CurrencySelector : KeyboardKey()
-    object MapPinPlaceholder : KeyboardKey()
+    object Location : KeyboardKey()
     object Submit : KeyboardKey()
 }

@@ -7,6 +7,7 @@ import com.example.tracker.data.enums.TransactionType
 import com.example.tracker.data.model.Account
 import com.example.tracker.data.model.Category
 import com.example.tracker.data.model.Transaction
+import com.example.tracker.data.preferences.ThemePreferences
 import com.example.tracker.domain.usecase.account.GetAccountsUseCase
 import com.example.tracker.domain.usecase.category.GetCategoriesUseCase
 import com.example.tracker.domain.usecase.transaction.CreateTransactionUseCase
@@ -18,7 +19,8 @@ import kotlinx.coroutines.launch
 class AddTransactionViewModel(
     private val getCategories: GetCategoriesUseCase,
     private val getAccounts: GetAccountsUseCase,
-    private val createTransaction: CreateTransactionUseCase
+    private val createTransaction: CreateTransactionUseCase,
+    private val themePreferences: ThemePreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddTransactionUiState())
@@ -27,6 +29,15 @@ class AddTransactionViewModel(
     init {
         loadCategories()
         loadAccounts()
+        loadLocationPreference()
+    }
+
+    private fun loadLocationPreference() {
+        viewModelScope.launch {
+            themePreferences.isLocationEnabled.collect { enabled ->
+                _uiState.update { it.copy(isLocationEnabled = enabled) }
+            }
+        }
     }
 
     private fun loadCategories() {
@@ -54,6 +65,11 @@ class AddTransactionViewModel(
 
     fun clearCategory() {
         _uiState.update { it.copy(selectedCategory = null, amountString = "", description = "", submitError = null) }
+    }
+
+    fun onLocationToggle(enabled: Boolean, lat: Double? = null, lng: Double? = null) {
+        _uiState.update { it.copy(isLocationEnabled = enabled, latitude = lat, longitude = lng) }
+        viewModelScope.launch { themePreferences.setLocationEnabled(enabled) }
     }
 
     fun selectAccount(account: Account) {
@@ -131,7 +147,9 @@ class AddTransactionViewModel(
                         description = state.description.ifBlank { null },
                         accountId = account.id,
                         categoryId = category.id,
-                        date = System.currentTimeMillis()
+                        date = System.currentTimeMillis(),
+                        latitude = if (state.isLocationEnabled) state.latitude else null,
+                        longitude = if (state.isLocationEnabled) state.longitude else null
                     )
                 )
                 _uiState.update { it.copy(isSubmitting = false, submitSuccess = true) }
@@ -149,7 +167,9 @@ class AddTransactionViewModel(
                 description = "",
                 isSubmitting = false,
                 submitError = null,
-                submitSuccess = false
+                submitSuccess = false,
+                latitude = null,
+                longitude = null
             )
         }
     }

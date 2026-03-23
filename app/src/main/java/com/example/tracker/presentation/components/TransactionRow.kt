@@ -18,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,6 +28,7 @@ import com.example.tracker.data.model.relations.TransactionWithDetails
 import com.example.tracker.ui.theme.ExpenseRed
 import com.example.tracker.ui.theme.IncomeGreen
 import com.example.tracker.presentation.util.CurrencyFormatter
+import androidx.core.graphics.toColorInt
 
 @Composable
 fun TransactionRow(
@@ -38,7 +41,7 @@ fun TransactionRow(
     val txn = transaction.transaction
 
     val categoryColor = try {
-        Color(android.graphics.Color.parseColor(category.color))
+        Color(category.color.toColorInt())
     } catch (_: Exception) {
         MaterialTheme.colorScheme.primary
     }
@@ -52,7 +55,7 @@ fun TransactionRow(
     val rowModifier = modifier
         .fillMaxWidth()
         .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
-        .padding(horizontal = 16.dp, vertical = 12.dp)
+        .padding(vertical = 12.dp)
 
     Row(
         modifier = rowModifier,
@@ -60,12 +63,12 @@ fun TransactionRow(
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .size(46.dp)
                 .clip(CircleShape)
                 .background(categoryColor),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = category.emoji, fontSize = 18.sp)
+            EmojiText(text = category.emoji, style = TextStyle(fontSize = 20.sp))
         }
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -73,14 +76,16 @@ fun TransactionRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = txn.description ?: category.name,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "${account.name} \u00B7 ${CurrencyFormatter.formatTime(txn.date)}",
-                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )

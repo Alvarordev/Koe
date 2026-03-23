@@ -24,7 +24,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
         contentPadding = contentPadding
     ) {
         uiState.dayGroups.forEach { dayGroup ->

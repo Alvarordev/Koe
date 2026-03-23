@@ -8,8 +8,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.outlined.LocationOff
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -28,6 +32,8 @@ fun TransactionKeyboard(
     onSubmit: () -> Unit,
     onCurrencySelect: () -> Unit,
     isSubmitting: Boolean,
+    isLocationEnabled: Boolean,
+    onLocationToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
@@ -56,11 +62,14 @@ fun TransactionKeyboard(
             TextButton(
                 onClick = {
                     fireKeyTap()
-                    onKey(KeyboardKey.MapPinPlaceholder)
+                    onKey(KeyboardKey.Delete)
                 },
                 modifier = Modifier.weight(1f).height(KEY_HEIGHT)
             ) {
-                Text(text = "\uD83D\uDCCD", style = MaterialTheme.typography.titleMedium)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Backspace,
+                    contentDescription = "Delete"
+                )
             }
         }
 
@@ -76,16 +85,18 @@ fun TransactionKeyboard(
                     Text(text = digit.toString(), style = MaterialTheme.typography.titleLarge)
                 }
             }
-            TextButton(
-                onClick = {
-                    fireKeyTap()
-                    onKey(KeyboardKey.Delete)
+            IconToggleButton(
+                checked = isLocationEnabled,
+                onCheckedChange = {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    onLocationToggle()
                 },
                 modifier = Modifier.weight(1f).height(KEY_HEIGHT)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Backspace,
-                    contentDescription = "Delete"
+                    imageVector = if (isLocationEnabled) Icons.Filled.LocationOn else Icons.Outlined.LocationOff,
+                    contentDescription = null,
+                    tint = if (isLocationEnabled) MaterialTheme.colorScheme.primary else LocalContentColor.current
                 )
             }
         }

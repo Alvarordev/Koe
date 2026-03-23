@@ -40,6 +40,7 @@ fun AddTransactionSheet(
     onDescriptionChange: (String) -> Unit,
     onSubmit: () -> Unit,
     onDismiss: () -> Unit,
+    onLocationToggle: (Boolean, Double?, Double?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -86,7 +87,9 @@ fun AddTransactionSheet(
                         onAccountSelected = onAccountSelected,
                         onKeyPress = onKeyPress,
                         onDescriptionChange = onDescriptionChange,
-                        onSubmit = onSubmit
+                        onSubmit = onSubmit,
+                        isLocationEnabled = uiState.isLocationEnabled,
+                        onLocationToggle = onLocationToggle
                     )
                 } else {
                     CategoryPickerContent(

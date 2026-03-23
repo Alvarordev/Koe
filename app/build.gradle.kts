@@ -76,6 +76,12 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
     testImplementation(libs.androidx.room.testing)
+
+    //emoji
+    implementation("com.vanniktech:emoji-ios:0.23.0")
+
+    // Location
+    implementation(libs.play.services.location)
 }
 
 ksp {

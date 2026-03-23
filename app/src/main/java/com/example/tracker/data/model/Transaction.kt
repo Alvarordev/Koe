@@ -59,5 +59,7 @@ data class Transaction(
     val isRecurring: Boolean = false,
     val recurringRuleId: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )

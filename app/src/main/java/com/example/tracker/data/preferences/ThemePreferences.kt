@@ -14,14 +14,23 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class ThemePreferences(private val context: Context) {
 
     private val isDarkModeKey = booleanPreferencesKey("is_dark_mode")
+    private val LOCATION_ENABLED_KEY = booleanPreferencesKey("location_enabled")
 
     val isDarkMode: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[isDarkModeKey] ?: false
+    }
+
+    val isLocationEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[LOCATION_ENABLED_KEY] ?: false
     }
 
     suspend fun setDarkMode(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[isDarkModeKey] = enabled
         }
+    }
+
+    suspend fun setLocationEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[LOCATION_ENABLED_KEY] = enabled }
     }
 }
