@@ -24,6 +24,7 @@ import com.example.tracker.domain.usecase.transaction.GetTransactionsByAccountUs
 import com.example.tracker.domain.usecase.transaction.GetTransactionsByDateRangeUseCase
 import com.example.tracker.domain.usecase.subscription.GetSubscriptionServicesUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsUseCase
+import com.example.tracker.domain.usecase.yape.ProcessYapeShareImageUseCase
 import org.koin.dsl.module
 
 val useCaseModule = module {
@@ -66,4 +67,7 @@ val useCaseModule = module {
 
     // Person
     factory { GetPersonsUseCase(get()) }
+
+    // Yape
+    factory { ProcessYapeShareImageUseCase(get(), get()) }
 }

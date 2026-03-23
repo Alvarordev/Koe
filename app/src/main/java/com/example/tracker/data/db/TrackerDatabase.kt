@@ -15,6 +15,7 @@ import com.example.tracker.data.db.dao.FormalLoanPaymentDao
 import com.example.tracker.data.db.dao.PersonDao
 import com.example.tracker.data.db.dao.RecurringRuleDao
 import com.example.tracker.data.db.dao.SubscriptionServiceDao
+import com.example.tracker.data.db.dao.ProcessedNotificationDao
 import com.example.tracker.data.db.dao.TransactionDao
 import com.example.tracker.data.model.Account
 import com.example.tracker.data.model.Budget
@@ -26,6 +27,7 @@ import com.example.tracker.data.model.FormalLoanPayment
 import com.example.tracker.data.model.Person
 import com.example.tracker.data.model.RecurringRule
 import com.example.tracker.data.model.SubscriptionService
+import com.example.tracker.data.model.ProcessedNotification
 import com.example.tracker.data.model.Transaction
 
 @Database(
@@ -40,9 +42,10 @@ import com.example.tracker.data.model.Transaction
         CasualLoan::class,
         CasualLoanTransaction::class,
         FormalLoan::class,
-        FormalLoanPayment::class
+        FormalLoanPayment::class,
+        ProcessedNotification::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -53,6 +56,23 @@ abstract class TrackerDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE transactions ADD COLUMN latitude REAL")
                 db.execSQL("ALTER TABLE transactions ADD COLUMN longitude REAL")
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `processed_notifications` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `dedupKey` TEXT NOT NULL,
+                        `operationNumber` TEXT,
+                        `amount` INTEGER NOT NULL,
+                        `type` TEXT NOT NULL,
+                        `processedAt` INTEGER NOT NULL
+                    )
+                """)
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_processed_notifications_dedupKey` ON `processed_notifications` (`dedupKey`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_processed_notifications_operationNumber` ON `processed_notifications` (`operationNumber`)")
             }
         }
     }
@@ -67,4 +87,5 @@ abstract class TrackerDatabase : RoomDatabase() {
     abstract fun casualLoanTransactionDao(): CasualLoanTransactionDao
     abstract fun formalLoanDao(): FormalLoanDao
     abstract fun formalLoanPaymentDao(): FormalLoanPaymentDao
+    abstract fun processedNotificationDao(): ProcessedNotificationDao
 }

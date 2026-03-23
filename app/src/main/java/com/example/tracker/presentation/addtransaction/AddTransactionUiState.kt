@@ -15,5 +15,8 @@ data class AddTransactionUiState(
     val submitSuccess: Boolean = false,
     val isLocationEnabled: Boolean = false,
     val latitude: Double? = null,
-    val longitude: Double? = null
+    val longitude: Double? = null,
+    val isProcessingYapeImage: Boolean = false,
+    val yapeOperationNumber: String? = null,
+    val prefilledSource: String? = null
 )

@@ -14,7 +14,7 @@ val databaseModule = module {
             "tracker_database"
         )
             .addCallback(DatabaseSeeder())
-            .addMigrations(TrackerDatabase.MIGRATION_1_2)
+            .addMigrations(TrackerDatabase.MIGRATION_1_2, TrackerDatabase.MIGRATION_2_3)
             .fallbackToDestructiveMigration(true)
             .build()
     }
@@ -29,4 +29,5 @@ val databaseModule = module {
     single { get<TrackerDatabase>().casualLoanTransactionDao() }
     single { get<TrackerDatabase>().formalLoanDao() }
     single { get<TrackerDatabase>().formalLoanPaymentDao() }
+    single { get<TrackerDatabase>().processedNotificationDao() }
 }

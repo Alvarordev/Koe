@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -38,6 +39,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.tracker.MainActivity
 import com.example.tracker.presentation.accounts.accountdetail.AccountDetailScreen
 import com.example.tracker.presentation.accounts.AccountsScreen
 import com.example.tracker.presentation.accounts.addaccount.AddAccountScreen
@@ -48,6 +50,10 @@ import com.example.tracker.presentation.categories.CategoriesViewModel
 import com.example.tracker.presentation.categories.addcategory.AddEditCategorySheet
 import com.example.tracker.presentation.home.HomeScreen
 import com.example.tracker.presentation.settings.SettingsScreen
+import com.example.tracker.presentation.settings.yapesetup.screens.YapeSetupAccountScreen
+import com.example.tracker.presentation.settings.yapesetup.screens.YapeSetupIntroScreen
+import com.example.tracker.presentation.settings.yapesetup.screens.YapeSetupPermissionScreen
+import com.example.tracker.presentation.settings.yapesetup.screens.YapeStatusScreen
 import org.koin.androidx.compose.koinViewModel
 
 enum class TrackerTab(
@@ -62,7 +68,14 @@ enum class TrackerTab(
     Settings("settings", "Ajustes", Icons.Filled.Settings, Icons.Outlined.Settings)
 }
 
-private val bottomBarSuppressedRoutes = setOf("add_account", "account_detail/{accountId}")
+private val bottomBarSuppressedRoutes = setOf(
+    "add_account",
+    "account_detail/{accountId}",
+    "yape_setup_intro",
+    "yape_setup_account",
+    "yape_setup_permission",
+    "yape_status"
+)
 
 @Composable
 fun TrackerScaffold() {
@@ -75,6 +88,9 @@ fun TrackerScaffold() {
     val addUiState by addViewModel.uiState.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
+
+    val activity = LocalContext.current as? MainActivity
+    val sharedImageUri by activity?.sharedImageUri?.collectAsState() ?: remember { mutableStateOf(null) }
 
     var showAddCategorySheet by remember { mutableStateOf(false) }
     var editCategoryId by remember { mutableStateOf<Long?>(null) }
@@ -94,6 +110,15 @@ fun TrackerScaffold() {
         if (addUiState.submitSuccess) {
             showSheet = false
             addViewModel.reset()
+        }
+    }
+
+    LaunchedEffect(sharedImageUri) {
+        val uri = sharedImageUri
+        if (uri != null) {
+            addViewModel.processYapeImage(uri)
+            showSheet = true
+            activity?.clearSharedImage()
         }
     }
 
@@ -187,7 +212,11 @@ fun TrackerScaffold() {
                 )
             }
             composable(TrackerTab.Settings.route) {
-                SettingsScreen(contentPadding = innerPadding)
+                SettingsScreen(
+                    contentPadding = innerPadding,
+                    onNavigateToYapeSetup = { navController.navigate("yape_setup_intro") },
+                    onNavigateToYapeStatus = { navController.navigate("yape_status") }
+                )
             }
             composable("add_account") {
                 AddAccountScreen(
@@ -198,6 +227,32 @@ fun TrackerScaffold() {
                 val accountId = backStackEntry.arguments?.getString("accountId")?.toLongOrNull() ?: 0L
                 AccountDetailScreen(
                     accountId = accountId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable("yape_setup_intro") {
+                YapeSetupIntroScreen(
+                    onNavigateToAccount = { navController.navigate("yape_setup_account") }
+                )
+            }
+            composable("yape_setup_account") {
+                YapeSetupAccountScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToPermission = { navController.navigate("yape_setup_permission") }
+                )
+            }
+            composable("yape_setup_permission") {
+                YapeSetupPermissionScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onSetupComplete = {
+                        navController.navigate("yape_status") {
+                            popUpTo("yape_setup_intro") { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable("yape_status") {
+                YapeStatusScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

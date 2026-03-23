@@ -82,6 +82,12 @@ dependencies {
 
     // Location
     implementation(libs.play.services.location)
+
+    // ML Kit Text Recognition
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+
+    // Coroutines Play Services (for .await() on ML Kit Tasks)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 }
 
 ksp {
