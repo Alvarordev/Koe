@@ -6,8 +6,12 @@ import com.example.tracker.domain.usecase.account.GetAccountByIdUseCase
 import com.example.tracker.domain.usecase.account.GetAccountsUseCase
 import com.example.tracker.domain.usecase.budget.CreateBudgetUseCase
 import com.example.tracker.domain.usecase.budget.GetBudgetsUseCase
+import com.example.tracker.domain.usecase.category.ArchiveCategoryUseCase
+import com.example.tracker.domain.usecase.category.CreateCategoryUseCase
 import com.example.tracker.domain.usecase.category.GetCategoriesByTypeUseCase
 import com.example.tracker.domain.usecase.category.GetCategoriesUseCase
+import com.example.tracker.domain.usecase.category.GetCategoryByIdUseCase
+import com.example.tracker.domain.usecase.category.UpdateCategoryUseCase
 import com.example.tracker.domain.usecase.loan.GetCasualLoansUseCase
 import com.example.tracker.domain.usecase.loan.GetFormalLoansUseCase
 import com.example.tracker.domain.usecase.person.GetPersonsUseCase
@@ -18,6 +22,7 @@ import com.example.tracker.domain.usecase.transaction.DeleteTransactionUseCase
 import com.example.tracker.domain.usecase.transaction.GetExpensesByCategoryUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsByAccountUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsByDateRangeUseCase
+import com.example.tracker.domain.usecase.subscription.GetSubscriptionServicesUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsUseCase
 import org.koin.dsl.module
 
@@ -39,6 +44,13 @@ val useCaseModule = module {
     // Category
     factory { GetCategoriesUseCase(get()) }
     factory { GetCategoriesByTypeUseCase(get()) }
+    factory { CreateCategoryUseCase(get()) }
+    factory { UpdateCategoryUseCase(get()) }
+    factory { GetCategoryByIdUseCase(get()) }
+    factory { ArchiveCategoryUseCase(get()) }
+
+    // Subscription
+    factory { GetSubscriptionServicesUseCase(get()) }
 
     // Budget
     factory { GetBudgetsUseCase(get()) }

@@ -3,11 +3,15 @@ package com.example.tracker.presentation.navigation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -39,7 +43,11 @@ import com.example.tracker.presentation.accounts.AccountsScreen
 import com.example.tracker.presentation.accounts.addaccount.AddAccountScreen
 import com.example.tracker.presentation.addtransaction.AddTransactionSheet
 import com.example.tracker.presentation.addtransaction.AddTransactionViewModel
+import com.example.tracker.presentation.categories.CategoriesScreen
+import com.example.tracker.presentation.categories.CategoriesViewModel
+import com.example.tracker.presentation.categories.addcategory.AddEditCategorySheet
 import com.example.tracker.presentation.home.HomeScreen
+import com.example.tracker.presentation.settings.SettingsScreen
 import org.koin.androidx.compose.koinViewModel
 
 enum class TrackerTab(
@@ -49,7 +57,9 @@ enum class TrackerTab(
     val unselectedIcon: ImageVector
 ) {
     Home("home", "Home", Icons.Filled.Home, Icons.Outlined.Home),
-    Accounts("accounts", "Accounts", Icons.Filled.AccountBalance, Icons.Outlined.AccountBalance)
+    Accounts("accounts", "Accounts", Icons.Filled.AccountBalance, Icons.Outlined.AccountBalance),
+    Categories("categories", "Categories", Icons.AutoMirrored.Filled.Label, Icons.AutoMirrored.Outlined.Label),
+    Settings("settings", "Ajustes", Icons.Filled.Settings, Icons.Outlined.Settings)
 }
 
 private val bottomBarSuppressedRoutes = setOf("add_account", "account_detail/{accountId}")
@@ -66,9 +76,13 @@ fun TrackerScaffold() {
     var showSheet by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
+    var showAddCategorySheet by remember { mutableStateOf(false) }
+    var editCategoryId by remember { mutableStateOf<Long?>(null) }
+
     val tabFabActions: Map<String, () -> Unit> = mapOf(
         TrackerTab.Home.route to { showSheet = true },
-        TrackerTab.Accounts.route to { navController.navigate("add_account") }
+        TrackerTab.Accounts.route to { navController.navigate("add_account") },
+        TrackerTab.Categories.route to { showAddCategorySheet = true }
     )
 
     val showBottomBar = currentRoute !in bottomBarSuppressedRoutes
@@ -86,7 +100,7 @@ fun TrackerScaffold() {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
-            if (showBottomBar) {
+            if (showBottomBar && tabFabActions.containsKey(currentTabRoute)) {
                 FloatingActionButton(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -161,6 +175,20 @@ fun TrackerScaffold() {
                     }
                 )
             }
+            composable(TrackerTab.Categories.route) {
+                val categoriesViewModel: CategoriesViewModel = koinViewModel()
+                val categoriesUiState by categoriesViewModel.uiState.collectAsState()
+                CategoriesScreen(
+                    contentPadding = innerPadding,
+                    uiState = categoriesUiState,
+                    onCategoryClick = { categoryId ->
+                        editCategoryId = categoryId
+                    }
+                )
+            }
+            composable(TrackerTab.Settings.route) {
+                SettingsScreen(contentPadding = innerPadding)
+            }
             composable("add_account") {
                 AddAccountScreen(
                     onNavigateBack = { navController.popBackStack() }
@@ -188,6 +216,16 @@ fun TrackerScaffold() {
             onDismiss = {
                 showSheet = false
                 addViewModel.reset()
+            }
+        )
+    }
+
+    if (showAddCategorySheet || editCategoryId != null) {
+        AddEditCategorySheet(
+            categoryId = editCategoryId,
+            onDismiss = {
+                showAddCategorySheet = false
+                editCategoryId = null
             }
         )
     }

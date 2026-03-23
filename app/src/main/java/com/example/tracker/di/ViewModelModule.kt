@@ -4,7 +4,10 @@ import com.example.tracker.presentation.accounts.accountdetail.AccountDetailView
 import com.example.tracker.presentation.accounts.AccountsViewModel
 import com.example.tracker.presentation.accounts.addaccount.AddAccountViewModel
 import com.example.tracker.presentation.addtransaction.AddTransactionViewModel
+import com.example.tracker.presentation.categories.CategoriesViewModel
+import com.example.tracker.presentation.categories.addcategory.AddEditCategoryViewModel
 import com.example.tracker.presentation.home.HomeViewModel
+import com.example.tracker.presentation.settings.SettingsViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -14,4 +17,7 @@ val viewModelModule = module {
     viewModel { AccountsViewModel(get()) }
     viewModel { AddAccountViewModel(get()) }
     viewModel { (accountId: Long) -> AccountDetailViewModel(accountId, get(), get()) }
+    viewModel { CategoriesViewModel(get(), get(), get()) }
+    viewModel { (categoryId: Long?) -> AddEditCategoryViewModel(categoryId, get(), get(), get()) }
+    viewModel { SettingsViewModel(get()) }
 }
