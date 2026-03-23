@@ -19,6 +19,7 @@ import com.example.tracker.domain.usecase.recurring.GetRecurringRulesUseCase
 import com.example.tracker.domain.usecase.recurring.ProcessDueRulesUseCase
 import com.example.tracker.domain.usecase.transaction.CreateTransactionUseCase
 import com.example.tracker.domain.usecase.transaction.DeleteTransactionUseCase
+import com.example.tracker.domain.usecase.transaction.GetCategorySummaryUseCase
 import com.example.tracker.domain.usecase.transaction.GetExpensesByCategoryUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsByAccountUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsByDateRangeUseCase
@@ -34,6 +35,7 @@ val useCaseModule = module {
     factory { GetTransactionsByDateRangeUseCase(get()) }
     factory { CreateTransactionUseCase(get()) }
     factory { DeleteTransactionUseCase(get()) }
+    factory { GetCategorySummaryUseCase(get()) }
     factory { GetExpensesByCategoryUseCase(get()) }
 
     // Account

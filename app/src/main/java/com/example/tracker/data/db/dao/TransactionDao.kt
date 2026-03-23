@@ -9,6 +9,7 @@ import androidx.room.Transaction as RoomTransaction
 import androidx.room.Update
 import com.example.tracker.data.enums.TransactionType
 import com.example.tracker.data.model.Transaction
+import com.example.tracker.data.model.relations.CategorySummary
 import com.example.tracker.data.model.relations.CategoryTotal
 import com.example.tracker.data.model.relations.TransactionWithDetails
 import kotlinx.coroutines.flow.Flow
@@ -49,6 +50,13 @@ interface TransactionDao {
         ORDER BY total DESC
     """)
     fun getExpensesByCategoryInPeriod(start: Long, end: Long): Flow<List<CategoryTotal>>
+
+    @Query("""
+        SELECT COUNT(id) as count, COALESCE(SUM(amount), 0) as total
+        FROM transactions
+        WHERE categoryId = :categoryId AND date BETWEEN :start AND :end
+    """)
+    fun getCategorySummaryInPeriod(categoryId: Long, start: Long, end: Long): Flow<CategorySummary>
 
     @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type = :type AND date BETWEEN :start AND :end")
     fun getTotalByTypeInPeriod(type: TransactionType, start: Long, end: Long): Flow<Long>

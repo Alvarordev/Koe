@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,9 +17,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.tracker.data.model.Account
@@ -45,6 +50,7 @@ fun AddTransactionSheet(
     onKeyPress: (KeyboardKey) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onSubmit: () -> Unit,
+    onDateSelected: (Long) -> Unit,
     onDismiss: () -> Unit,
     onLocationToggle: (Boolean, Double?, Double?) -> Unit,
     modifier: Modifier = Modifier
@@ -56,7 +62,17 @@ fun AddTransactionSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 8.dp, bottom = 14.dp)
+                    .width(38.dp)
+                    .height(4.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant)
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = { WindowInsets.navigationBars },
         modifier = modifier
     ) {
@@ -67,7 +83,7 @@ fun AddTransactionSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.9f)
+                .fillMaxHeight(0.91f)
                 .padding(bottom = 24.dp)
         ) {
             if (uiState.isProcessingYapeImage) {
@@ -112,6 +128,8 @@ fun AddTransactionSheet(
                             onKeyPress = onKeyPress,
                             onDescriptionChange = onDescriptionChange,
                             onSubmit = onSubmit,
+                            onClearCategory = onClearCategory,
+                            onDateSelected = onDateSelected,
                             isLocationEnabled = uiState.isLocationEnabled,
                             onLocationToggle = onLocationToggle
                         )

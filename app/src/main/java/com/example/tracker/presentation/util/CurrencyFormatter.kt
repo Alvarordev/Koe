@@ -11,6 +11,11 @@ object CurrencyFormatter {
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
+    fun formatBalance(amountMinor: Long, currencyCode: String): String {
+        val symbol = SupportedCurrency.entries.find { it.code == currencyCode }?.symbol ?: currencyCode
+        return "$symbol ${String.format("%.2f", amountMinor / 100.0)}"
+    }
+
     fun formatAmount(amountMinor: Long, currencyCode: String, type: TransactionType): String {
         val symbol = SupportedCurrency.entries
             .find { it.code == currencyCode }

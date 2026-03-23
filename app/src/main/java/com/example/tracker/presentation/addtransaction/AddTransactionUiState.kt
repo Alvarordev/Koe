@@ -2,6 +2,7 @@ package com.example.tracker.presentation.addtransaction
 
 import com.example.tracker.data.model.Account
 import com.example.tracker.data.model.Category
+import com.example.tracker.data.model.relations.CategorySummary
 
 data class AddTransactionUiState(
     val categories: List<Category> = emptyList(),
@@ -18,5 +19,7 @@ data class AddTransactionUiState(
     val longitude: Double? = null,
     val isProcessingYapeImage: Boolean = false,
     val yapeOperationNumber: String? = null,
-    val prefilledSource: String? = null
+    val prefilledSource: String? = null,
+    val selectedDate: Long = System.currentTimeMillis(),
+    val categorySummary: CategorySummary? = null
 )

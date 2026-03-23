@@ -268,6 +268,7 @@ fun TrackerScaffold() {
             onKeyPress = addViewModel::onKeyPress,
             onDescriptionChange = addViewModel::onDescriptionChange,
             onSubmit = addViewModel::submit,
+            onDateSelected = addViewModel::onDateSelected,
             onLocationToggle = addViewModel::onLocationToggle,
             onDismiss = {
                 showSheet = false

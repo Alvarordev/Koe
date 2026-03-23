@@ -16,7 +16,11 @@ import com.example.tracker.domain.exception.DuplicateTransactionException
 import com.example.tracker.domain.usecase.account.GetAccountsUseCase
 import com.example.tracker.domain.usecase.category.GetCategoriesUseCase
 import com.example.tracker.domain.usecase.transaction.CreateTransactionUseCase
+import com.example.tracker.domain.usecase.transaction.GetCategorySummaryUseCase
 import com.example.tracker.domain.usecase.yape.ProcessYapeShareImageUseCase
+import java.time.YearMonth
+import java.time.ZoneId
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -30,13 +34,15 @@ class AddTransactionViewModel(
     private val themePreferences: ThemePreferences,
     private val processYapeShareImage: ProcessYapeShareImageUseCase,
     private val yapePreferences: YapePreferences,
-    private val processedNotificationDao: ProcessedNotificationDao
+    private val processedNotificationDao: ProcessedNotificationDao,
+    private val getCategorySummary: GetCategorySummaryUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddTransactionUiState())
     val uiState: StateFlow<AddTransactionUiState> = _uiState
 
     private var yapeDateMillis: Long? = null
+    private var categorySummaryJob: Job? = null
 
     init {
         loadCategories()
@@ -72,11 +78,40 @@ class AddTransactionViewModel(
     }
 
     fun selectCategory(category: Category) {
-        _uiState.update { it.copy(selectedCategory = category) }
+        _uiState.update { it.copy(selectedCategory = category, categorySummary = null) }
+        loadCategorySummary(category.id)
+    }
+
+    private fun loadCategorySummary(categoryId: Long) {
+        categorySummaryJob?.cancel()
+        categorySummaryJob = viewModelScope.launch {
+            val yearMonth = YearMonth.now()
+            val zone = ZoneId.systemDefault()
+            val start = yearMonth.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
+            val end = yearMonth.atEndOfMonth().atTime(23, 59, 59).atZone(zone).toInstant().toEpochMilli()
+            getCategorySummary(categoryId, start, end).collect { summary ->
+                _uiState.update { it.copy(categorySummary = summary) }
+            }
+        }
     }
 
     fun clearCategory() {
-        _uiState.update { it.copy(selectedCategory = null, amountString = "", description = "", submitError = null) }
+        categorySummaryJob?.cancel()
+        categorySummaryJob = null
+        _uiState.update {
+            it.copy(
+                selectedCategory = null,
+                amountString = "",
+                description = "",
+                submitError = null,
+                categorySummary = null,
+                selectedDate = System.currentTimeMillis()
+            )
+        }
+    }
+
+    fun onDateSelected(dateMillis: Long) {
+        _uiState.update { it.copy(selectedDate = dateMillis) }
     }
 
     fun onLocationToggle(enabled: Boolean, lat: Double? = null, lng: Double? = null) {
@@ -197,7 +232,7 @@ class AddTransactionViewModel(
         val transactionDate = if (state.prefilledSource == "yape" && yapeDateMillis != null) {
             yapeDateMillis!!
         } else {
-            System.currentTimeMillis()
+            state.selectedDate
         }
 
         _uiState.update { it.copy(isSubmitting = true, submitError = null) }
@@ -237,6 +272,8 @@ class AddTransactionViewModel(
     }
 
     fun reset() {
+        categorySummaryJob?.cancel()
+        categorySummaryJob = null
         yapeDateMillis = null
         _uiState.update {
             it.copy(
@@ -250,7 +287,9 @@ class AddTransactionViewModel(
                 longitude = null,
                 isProcessingYapeImage = false,
                 yapeOperationNumber = null,
-                prefilledSource = null
+                prefilledSource = null,
+                categorySummary = null,
+                selectedDate = System.currentTimeMillis()
             )
         }
     }

@@ -4,6 +4,7 @@ import com.example.tracker.data.db.dao.AccountDao
 import com.example.tracker.data.db.dao.TransactionDao
 import com.example.tracker.data.enums.TransactionType
 import com.example.tracker.data.model.Transaction
+import com.example.tracker.data.model.relations.CategorySummary
 import com.example.tracker.data.model.relations.CategoryTotal
 import com.example.tracker.data.model.relations.TransactionWithDetails
 import com.example.tracker.domain.repository.TransactionRepository
@@ -27,6 +28,9 @@ class TransactionRepositoryImpl(
 
     override fun getByDateRange(start: Long, end: Long): Flow<List<TransactionWithDetails>> =
         transactionDao.getByDateRange(start, end)
+
+    override fun getCategorySummaryInPeriod(categoryId: Long, start: Long, end: Long): Flow<CategorySummary> =
+        transactionDao.getCategorySummaryInPeriod(categoryId, start, end)
 
     override fun getExpensesByCategoryInPeriod(start: Long, end: Long): Flow<List<CategoryTotal>> =
         transactionDao.getExpensesByCategoryInPeriod(start, end)
