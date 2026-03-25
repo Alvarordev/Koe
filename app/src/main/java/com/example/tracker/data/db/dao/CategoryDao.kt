@@ -35,4 +35,7 @@ interface CategoryDao {
 
     @Query("SELECT * FROM categories WHERE isSystem = 1")
     fun getSystemCategories(): Flow<List<Category>>
+
+    @Query("SELECT * FROM categories WHERE name = 'Transfer' AND isSystem = 1 LIMIT 1")
+    suspend fun getTransferCategory(): Category?
 }

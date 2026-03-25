@@ -2,6 +2,7 @@ package com.example.tracker.domain.repository
 
 import com.example.tracker.data.enums.TransactionType
 import com.example.tracker.data.model.Transaction
+import com.example.tracker.data.model.relations.CategoryIdSummary
 import com.example.tracker.data.model.relations.CategorySummary
 import com.example.tracker.data.model.relations.CategoryTotal
 import com.example.tracker.data.model.relations.TransactionWithDetails
@@ -14,6 +15,7 @@ interface TransactionRepository {
     fun getByCategory(categoryId: Long): Flow<List<TransactionWithDetails>>
     fun getByDateRange(start: Long, end: Long): Flow<List<TransactionWithDetails>>
     fun getCategorySummaryInPeriod(categoryId: Long, start: Long, end: Long): Flow<CategorySummary>
+    fun getAllCategorySummariesInPeriod(start: Long, end: Long): Flow<List<CategoryIdSummary>>
     fun getExpensesByCategoryInPeriod(start: Long, end: Long): Flow<List<CategoryTotal>>
     fun getTotalByTypeInPeriod(type: TransactionType, start: Long, end: Long): Flow<Long>
     suspend fun create(transaction: Transaction): Long

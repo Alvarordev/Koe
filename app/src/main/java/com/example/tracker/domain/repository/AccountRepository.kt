@@ -9,6 +9,7 @@ interface AccountRepository {
     fun getAll(): Flow<List<Account>>
     fun getById(id: Long): Flow<Account?>
     fun getByType(type: AccountType): Flow<List<Account>>
+    fun getTotalBalance(): Flow<Long>
     fun getTotalBalanceByCurrency(): Flow<List<CurrencyBalance>>
     suspend fun create(account: Account): Long
     suspend fun update(account: Account)

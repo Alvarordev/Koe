@@ -21,5 +21,6 @@ data class AddTransactionUiState(
     val yapeOperationNumber: String? = null,
     val prefilledSource: String? = null,
     val selectedDate: Long = System.currentTimeMillis(),
-    val categorySummary: CategorySummary? = null
+    val categorySummary: CategorySummary? = null,
+    val categorySummaries: Map<Long, CategorySummary> = emptyMap()
 )

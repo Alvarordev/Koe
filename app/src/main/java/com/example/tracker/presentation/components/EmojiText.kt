@@ -18,7 +18,7 @@ import com.vanniktech.emoji.EmojiTextView
 
 @Composable
 fun EmojiText(
-    text: String,
+    text: String?,
     modifier: Modifier = Modifier,
     style: TextStyle = LocalTextStyle.current,
     color: Color = Color.Unspecified,

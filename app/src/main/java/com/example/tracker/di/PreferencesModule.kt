@@ -1,5 +1,6 @@
 package com.example.tracker.di
 
+import com.example.tracker.data.preferences.ExchangeRatePreferences
 import com.example.tracker.data.preferences.ThemePreferences
 import com.example.tracker.data.preferences.YapePreferences
 import com.example.tracker.data.ocr.YapeImageOcrProcessor
@@ -12,4 +13,5 @@ val preferencesModule = module {
     single { YapePreferences(androidContext()) }
     single { YapeNotificationParser() }
     single { YapeImageOcrProcessor(androidContext()) }
+    single { ExchangeRatePreferences(androidContext()) }
 }

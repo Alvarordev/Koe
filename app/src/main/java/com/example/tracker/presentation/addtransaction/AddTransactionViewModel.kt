@@ -15,7 +15,9 @@ import com.example.tracker.data.preferences.YapePreferences
 import com.example.tracker.domain.exception.DuplicateTransactionException
 import com.example.tracker.domain.usecase.account.GetAccountsUseCase
 import com.example.tracker.domain.usecase.category.GetCategoriesUseCase
+import com.example.tracker.data.model.relations.CategorySummary
 import com.example.tracker.domain.usecase.transaction.CreateTransactionUseCase
+import com.example.tracker.domain.usecase.transaction.GetAllCategorySummariesUseCase
 import com.example.tracker.domain.usecase.transaction.GetCategorySummaryUseCase
 import com.example.tracker.domain.usecase.yape.ProcessYapeShareImageUseCase
 import java.time.YearMonth
@@ -35,7 +37,8 @@ class AddTransactionViewModel(
     private val processYapeShareImage: ProcessYapeShareImageUseCase,
     private val yapePreferences: YapePreferences,
     private val processedNotificationDao: ProcessedNotificationDao,
-    private val getCategorySummary: GetCategorySummaryUseCase
+    private val getCategorySummary: GetCategorySummaryUseCase,
+    private val getAllCategorySummaries: GetAllCategorySummariesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddTransactionUiState())
@@ -48,6 +51,7 @@ class AddTransactionViewModel(
         loadCategories()
         loadAccounts()
         loadLocationPreference()
+        loadAllCategorySummaries()
     }
 
     private fun loadLocationPreference() {
@@ -73,6 +77,20 @@ class AddTransactionViewModel(
                     .filter { !it.isArchived }
                     .minByOrNull { it.sortOrder }
                 _uiState.update { it.copy(accounts = accounts, selectedAccount = it.selectedAccount ?: defaultAccount) }
+            }
+        }
+    }
+
+    private fun loadAllCategorySummaries() {
+        viewModelScope.launch {
+            val yearMonth = YearMonth.now()
+            val zone = ZoneId.systemDefault()
+            val start = yearMonth.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
+            val end = yearMonth.atEndOfMonth().atTime(23, 59, 59).atZone(zone).toInstant().toEpochMilli()
+            getAllCategorySummaries(start, end).collect { summaries ->
+                _uiState.update { state ->
+                    state.copy(categorySummaries = summaries.associate { it.categoryId to CategorySummary(it.count, it.total) })
+                }
             }
         }
     }

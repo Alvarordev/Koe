@@ -68,6 +68,22 @@ class DatabaseSeeder : RoomDatabase.Callback() {
                 )
             )
         }
+
+        // Seed Transfer system category (archived, hidden from pickers)
+        db.execSQL(
+            """INSERT OR IGNORE INTO categories (name, emoji, color, type, isSystem, isArchived, sortOrder, createdAt)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            arrayOf<Any?>(
+                "Transfer",
+                "\uD83D\uDD04",  // 🔄
+                "#6B7280",
+                "EXPENSE",
+                1,
+                1,
+                999,
+                System.currentTimeMillis()
+            )
+        )
     }
 
     private fun seedSubscriptionServices(db: SupportSQLiteDatabase) {

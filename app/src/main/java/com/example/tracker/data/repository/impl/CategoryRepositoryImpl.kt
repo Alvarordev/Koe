@@ -26,4 +26,6 @@ class CategoryRepositoryImpl(private val dao: CategoryDao) : CategoryRepository 
         // System categories are seeded via DatabaseSeeder on DB creation.
         // This method is a no-op for the Room implementation.
     }
+
+    override suspend fun getTransferCategory(): Category? = dao.getTransferCategory()
 }

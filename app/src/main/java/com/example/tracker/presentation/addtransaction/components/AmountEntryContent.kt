@@ -5,13 +5,6 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -66,6 +59,7 @@ import com.example.tracker.data.enums.SupportedCurrency
 import com.example.tracker.data.model.Account
 import com.example.tracker.presentation.addtransaction.AddTransactionUiState
 import com.example.tracker.presentation.addtransaction.KeyboardKey
+import com.example.tracker.presentation.components.AnimatedAmountText
 import com.example.tracker.presentation.components.EmojiText
 import com.example.tracker.presentation.util.CurrencyFormatter
 import com.google.android.gms.location.CurrentLocationRequest
@@ -88,7 +82,8 @@ fun AmountEntryContent(
     onClearCategory: () -> Unit,
     onDateSelected: (Long) -> Unit,
     isLocationEnabled: Boolean,
-    onLocationToggle: (Boolean, Double?, Double?) -> Unit
+    onLocationToggle: (Boolean, Double?, Double?) -> Unit,
+    onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
@@ -166,20 +161,33 @@ fun AmountEntryContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            TextButton(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { showDatePicker = true }
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = displayDate,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                TextButton(onClick = onNavigateBack) {
+                    Text(
+                        text = "Volver",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                TextButton(onClick = { showDatePicker = true }) {
+                    Text(
+                        text = displayDate,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
             Spacer(Modifier.height(8.dp))
@@ -201,12 +209,15 @@ fun AmountEntryContent(
                     modifier = Modifier.padding(bottom = 12.dp, end = 4.dp)
                 )
 
-                Text(
+                AnimatedAmountText(
                     text = amountDisplay,
-                    fontSize = 80.sp,
+                    maxFontSize = 80.sp,
+                    minFontSize = 42.sp,
+                    shrinkThreshold = 5,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    animationDurationMs = 120,
                 )
             }
 
@@ -385,31 +396,33 @@ private fun CategoryCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = category.name,
-                    fontSize = 18.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
+                    lineHeight = 16.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "${summary?.count ?: 0} transacciones",
-                    fontSize = 15.sp,
+                    text = "${summary?.count ?: 0} ${if (summary?.count == 1) "Operaci\u00F3n" else "Operaciones"}",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    lineHeight = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             Text(
                 text = CurrencyFormatter.formatBalance(summary?.total ?: 0L, currencyCode),
-                fontSize = 20.sp,
+                fontSize = 19.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
 
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun AccountSelector(
+internal fun AccountSelector(
     uiState: AddTransactionUiState,
     onAccountSelected: (Account) -> Unit
 ) {
@@ -422,58 +435,42 @@ private fun AccountSelector(
         MaterialTheme.colorScheme.primary
     }
 
-    SharedTransitionLayout {
-        AnimatedContent(
-            targetState = isExpanded,
-            label = "AccountSelectionTransition",
-            transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) }
-        ) { targetExpanded ->
-            if (!targetExpanded) {
-                Box(
-                    modifier = Modifier
-                        .sharedElement(
-                            rememberSharedContentState(key = "account_box"),
-                            animatedVisibilityScope = this@AnimatedContent
-                        )
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(13.dp))
-                        .background(MaterialTheme.colorScheme.surface)
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(13.dp))
-                        .clickable { isExpanded = true }
-                        .padding(horizontal = 16.dp, vertical = 9.dp)
-                ) {
-                    AccountInfoContent(selectedAccount, accountColor)
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.4f))
-                        .clickable { isExpanded = false },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .sharedElement(
-                                rememberSharedContentState(key = "account_box"),
-                                animatedVisibilityScope = this@AnimatedContent
-                            )
-                            .width(350.dp)
-                            .height(400.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .clickable(enabled = false) { }
-                    ) {
-                        AccountListDetailed(
-                            activeAccounts = activeAccounts,
-                            onAccountSelected = {
-                                onAccountSelected(it)
-                                isExpanded = false
-                            }
-                        )
+    if (!isExpanded) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(13.dp))
+                .clickable { isExpanded = true }
+                .padding(horizontal = 16.dp, vertical = 9.dp)
+        ) {
+            AccountInfoContent(selectedAccount, accountColor)
+        }
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.4f))
+                .clickable { isExpanded = false },
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(350.dp)
+                    .height(400.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable(enabled = false) { }
+            ) {
+                AccountListDetailed(
+                    activeAccounts = activeAccounts,
+                    onAccountSelected = {
+                        onAccountSelected(it)
+                        isExpanded = false
                     }
-                }
+                )
             }
         }
     }
@@ -507,7 +504,7 @@ private fun AccountInfoContent(account: Account?, color: Color) {
             text = account?.let { CurrencyFormatter.formatBalance(it.currentBalance, currencyCode) } ?: "",
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

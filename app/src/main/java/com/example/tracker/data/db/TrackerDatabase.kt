@@ -45,7 +45,7 @@ import com.example.tracker.data.model.Transaction
         FormalLoanPayment::class,
         ProcessedNotification::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -56,6 +56,25 @@ abstract class TrackerDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE transactions ADD COLUMN latitude REAL")
                 db.execSQL("ALTER TABLE transactions ADD COLUMN longitude REAL")
+            }
+        }
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """INSERT OR IGNORE INTO categories (name, emoji, color, type, isSystem, isArchived, sortOrder, createdAt)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    arrayOf<Any?>(
+                        "Transfer",
+                        "\uD83D\uDD04",
+                        "#6B7280",
+                        "EXPENSE",
+                        1,
+                        1,
+                        999,
+                        System.currentTimeMillis()
+                    )
+                )
             }
         }
 

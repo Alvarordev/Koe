@@ -13,4 +13,5 @@ interface CategoryRepository {
     suspend fun update(category: Category)
     suspend fun archive(id: Long)
     suspend fun seedSystemCategories()
+    suspend fun getTransferCategory(): Category?
 }

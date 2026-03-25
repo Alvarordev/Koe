@@ -15,6 +15,8 @@ class AccountRepositoryImpl(private val dao: AccountDao) : AccountRepository {
 
     override fun getByType(type: AccountType): Flow<List<Account>> = dao.getByType(type)
 
+    override fun getTotalBalance(): Flow<Long> = dao.getTotalBalance()
+
     override fun getTotalBalanceByCurrency(): Flow<List<CurrencyBalance>> = dao.getTotalBalanceByCurrency()
 
     override suspend fun create(account: Account): Long = dao.insert(account)
