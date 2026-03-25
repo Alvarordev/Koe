@@ -5,27 +5,42 @@ import androidx.lifecycle.viewModelScope
 import com.example.tracker.data.enums.CategoryType
 import com.example.tracker.domain.usecase.category.ArchiveCategoryUseCase
 import com.example.tracker.domain.usecase.category.GetCategoriesUseCase
-import com.example.tracker.domain.usecase.subscription.GetSubscriptionServicesUseCase
+import com.example.tracker.domain.usecase.recurring.GetSubscriptionRulesUseCase
+import com.example.tracker.domain.usecase.transaction.GetAllCategorySummariesUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneId
 
 class CategoriesViewModel(
     getCategories: GetCategoriesUseCase,
-    getSubscriptionServices: GetSubscriptionServicesUseCase,
+    getSubscriptionRules: GetSubscriptionRulesUseCase,
+    getAllCategorySummaries: GetAllCategorySummariesUseCase,
     private val archiveCategoryUseCase: ArchiveCategoryUseCase
 ) : ViewModel() {
 
+    private val now = LocalDate.now()
+    private val monthStart = now.withDayOfMonth(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    private val monthEnd = now.plusMonths(1).withDayOfMonth(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
     val uiState: StateFlow<CategoriesUiState> = combine(
         getCategories(),
-        getSubscriptionServices()
-    ) { categories, subscriptions ->
+        getSubscriptionRules(),
+        getAllCategorySummaries(monthStart, monthEnd)
+    ) { categories, subscriptionRules, summaries ->
+        val summaryMap = summaries.associateBy { it.categoryId }
         CategoriesUiState(
-            expenseCategories = categories.filter { it.type == CategoryType.EXPENSE },
-            incomeCategories = categories.filter { it.type == CategoryType.INCOME },
-            subscriptionServices = subscriptions,
+            expenseCategories = categories
+                .filter { it.type == CategoryType.EXPENSE && !it.isArchived }
+                .sortedBy { it.sortOrder },
+            incomeCategories = categories
+                .filter { it.type == CategoryType.INCOME && !it.isArchived }
+                .sortedBy { it.sortOrder },
+            categorySummaries = summaryMap,
+            subscriptionRules = subscriptionRules,
             isLoading = false
         )
     }.stateIn(

@@ -2,6 +2,7 @@ package com.example.tracker.data.repository.impl
 
 import com.example.tracker.data.db.dao.AccountDao
 import com.example.tracker.data.db.dao.TransactionDao
+import com.example.tracker.data.enums.AccountType
 import com.example.tracker.data.enums.TransactionType
 import com.example.tracker.data.model.Transaction
 import com.example.tracker.data.model.relations.CategoryIdSummary
@@ -48,7 +49,12 @@ class TransactionRepositoryImpl(
             TransactionType.EXPENSE -> {
                 val account = accountDao.getById(transaction.accountId).first()
                 if (account != null) {
-                    accountDao.updateBalance(transaction.accountId, account.currentBalance - transaction.amount)
+                    if (account.type == AccountType.CREDIT) {
+                        val newCreditUsed = (account.creditUsed ?: 0L) + transaction.amount
+                        accountDao.updateCreditUsed(transaction.accountId, newCreditUsed)
+                    } else {
+                        accountDao.updateBalance(transaction.accountId, account.currentBalance - transaction.amount)
+                    }
                 }
             }
             TransactionType.INCOME -> {

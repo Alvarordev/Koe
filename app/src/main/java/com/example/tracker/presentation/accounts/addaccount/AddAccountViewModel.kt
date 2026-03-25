@@ -82,6 +82,15 @@ class AddAccountViewModel(
         }
     }
 
+    fun updateCreditUsed(value: String) {
+        _uiState.update { state ->
+            state.copy(formState = when (val form = state.formState) {
+                is AddAccountFormState.CreditFormState -> form.copy(creditUsed = value)
+                else -> form
+            })
+        }
+    }
+
     fun updateCardNetwork(network: CardNetwork) {
         _uiState.update { state ->
             state.copy(formState = when (val form = state.formState) {
@@ -182,6 +191,7 @@ class AddAccountViewModel(
             }
             is AddAccountFormState.CreditFormState -> {
                 val limit = (form.creditLimit.toDoubleOrNull() ?: 0.0) * 100
+                val used = (form.creditUsed.toDoubleOrNull() ?: 0.0) * 100
                 val rate = form.interestRate.toDoubleOrNull()?.let { it / 100.0 }
                 val payDay = form.paymentDay.toIntOrNull()
                 Account(
@@ -195,7 +205,7 @@ class AddAccountViewModel(
                     lastFourDigits = form.lastFourDigits.ifBlank { null },
                     expirationDate = form.expirationDate.ifBlank { null },
                     creditLimit = limit.toLong(),
-                    creditUsed = 0L,
+                    creditUsed = used.toLong(),
                     paymentDay = payDay,
                     interestRate = rate
                 )

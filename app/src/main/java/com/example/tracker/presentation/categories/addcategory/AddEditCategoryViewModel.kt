@@ -90,4 +90,8 @@ class AddEditCategoryViewModel(
             }
         }
     }
+
+    fun resetSubmitSuccess() {
+        _uiState.update { it.copy(submitSuccess = false) }
+    }
 }

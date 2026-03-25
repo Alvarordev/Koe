@@ -12,8 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,6 +35,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
@@ -42,7 +44,6 @@ import com.example.tracker.data.model.Category
 import com.example.tracker.data.model.relations.CategorySummary
 import com.example.tracker.presentation.addtransaction.AddTransactionUiState
 import com.example.tracker.presentation.components.EmojiText
-import com.example.tracker.presentation.util.CurrencyFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,14 +78,16 @@ fun CategoryPickerContent(
             }
         }
 
-        LazyColumn(
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(filteredCategories) { category ->
-                CategoryListItem(
+                CategoryGridItem(
                     category = category,
                     summary = uiState.categorySummaries[category.id],
                     currencyCode = currencyCode,
@@ -99,7 +102,7 @@ fun CategoryPickerContent(
 }
 
 @Composable
-private fun CategoryListItem(
+private fun CategoryGridItem(
     category: Category,
     summary: CategorySummary?,
     currencyCode: String,
@@ -110,8 +113,9 @@ private fun CategoryListItem(
     } catch (_: Exception) {
         MaterialTheme.colorScheme.primary
     }
-    val count = summary?.count ?: 0
     val total = summary?.total ?: 0L
+    val value = total / 100.0
+    val formattedAmount = if (total % 100 == 0L) String.format("%.0f", value) else String.format("%.2f", value)
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -125,45 +129,40 @@ private fun CategoryListItem(
                 shape = RoundedCornerShape(19.dp)
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 12.dp, vertical = 12.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(47.dp)
+                .size(40.dp)
                 .clip(CircleShape)
                 .background(color = categoryColor),
             contentAlignment = Alignment.Center
         ) {
             EmojiText(
                 text = category.emoji,
-                style = TextStyle(fontSize = 24.sp)
+                style = TextStyle(fontSize = 20.sp)
             )
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(10.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = category.name,
-                fontSize = 17.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 lineHeight = 16.sp,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "$count ${if (count == 1) "Operaci\u00F3n" else "Operaciones"}",
+                text = "$formattedAmount $currencyCode",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 lineHeight = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-
-        Text(
-            text = CurrencyFormatter.formatBalance(total, currencyCode),
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }

@@ -30,6 +30,7 @@ sealed class AddAccountFormState {
         override val color: String = "#1A73E8",
         override val currencyCode: String = "USD",
         val creditLimit: String = "",
+        val creditUsed: String = "",
         val cardNetwork: CardNetwork = CardNetwork.VISA,
         val lastFourDigits: String = "",
         val expirationDate: String = "",

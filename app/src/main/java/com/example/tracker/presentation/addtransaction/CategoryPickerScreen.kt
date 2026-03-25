@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.MaterialTheme
@@ -29,11 +30,15 @@ fun CategoryPickerScreen(
     onNavigateBack: () -> Unit
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues()
+    val navBarPadding = WindowInsets.navigationBars.asPaddingValues()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = statusBarPadding.calculateTopPadding())
+            .padding(
+                top = statusBarPadding.calculateTopPadding(),
+                bottom = navBarPadding.calculateBottomPadding()
+            )
     ) {
         Row(
             modifier = Modifier

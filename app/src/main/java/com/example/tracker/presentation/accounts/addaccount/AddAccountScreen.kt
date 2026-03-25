@@ -113,6 +113,7 @@ fun AddAccountScreen(
                 formState = uiState.formState,
                 onInitialBalanceChange = viewModel::updateInitialBalance,
                 onCreditLimitChange = viewModel::updateCreditLimit,
+                onCreditUsedChange = viewModel::updateCreditUsed,
                 onCardNetworkChange = viewModel::updateCardNetwork,
                 onLastFourDigitsChange = viewModel::updateLastFourDigits,
                 onExpirationDateChange = viewModel::updateExpirationDate,
@@ -268,6 +269,7 @@ private fun TypeSpecificFields(
     formState: AddAccountFormState,
     onInitialBalanceChange: (String) -> Unit,
     onCreditLimitChange: (String) -> Unit,
+    onCreditUsedChange: (String) -> Unit,
     onCardNetworkChange: (CardNetwork) -> Unit,
     onLastFourDigitsChange: (String) -> Unit,
     onExpirationDateChange: (String) -> Unit,
@@ -320,6 +322,14 @@ private fun TypeSpecificFields(
                 value = formState.creditLimit,
                 onValueChange = onCreditLimitChange,
                 label = { Text("Credit Limit") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = formState.creditUsed,
+                onValueChange = onCreditUsedChange,
+                label = { Text("Credit Used") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true

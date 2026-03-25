@@ -1,5 +1,6 @@
 package com.example.tracker.presentation.navigation
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -96,15 +97,13 @@ fun TrackerScaffold() {
     val addUiState by addViewModel.uiState.collectAsState()
     val haptic = LocalHapticFeedback.current
 
-    val activity = LocalContext.current as? MainActivity
+    val activity = LocalActivity.current as? MainActivity
     val sharedImageUri by activity?.sharedImageUri?.collectAsState() ?: remember { mutableStateOf(null) }
 
     val transferViewModel: TransferViewModel = koinViewModel()
     val transferUiState by transferViewModel.uiState.collectAsState()
     var showAddCategorySheet by remember { mutableStateOf(false) }
     var editCategoryId by remember { mutableStateOf<Long?>(null) }
-
-    var fabMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
     val tabFabActions: Map<String, () -> Unit> = mapOf(
         TrackerTab.Accounts.route to { navController.navigate("add_account") },
@@ -141,18 +140,6 @@ fun TrackerScaffold() {
                         navController = navController,
                         onTransactionPress = { navController.navigate("add_transaction_category") }
                     )
-                } else if (tabFabActions.containsKey(currentTabRoute)) {
-                    FloatingActionButton(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            tabFabActions[currentTabRoute]?.invoke()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add"
-                        )
-                    }
                 }
             }
         },
@@ -222,7 +209,8 @@ fun TrackerScaffold() {
                         contentPadding = innerPadding,
                         onAccountClick = { accountId ->
                             navController.navigate("account_detail/$accountId")
-                        }
+                        },
+                        onAddAccountClick = { navController.navigate("add_account") }
                     )
                 }
                 composable(TrackerTab.Categories.route) {
@@ -233,14 +221,21 @@ fun TrackerScaffold() {
                         uiState = categoriesUiState,
                         onCategoryClick = { categoryId ->
                             editCategoryId = categoryId
-                        }
+                        },
+                        onAddCategoryClick = { showAddCategorySheet = true }
                     )
                 }
                 composable(TrackerTab.Settings.route) {
                     SettingsScreen(
                         contentPadding = innerPadding,
                         onNavigateToYapeSetup = { navController.navigate("yape_setup_intro") },
-                        onNavigateToYapeStatus = { navController.navigate("yape_status") }
+                        onNavigateToYapeStatus = { navController.navigate("yape_status") },
+                        onDatabaseReset = {
+                            navController.navigate(TrackerTab.Home.route) {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
                     )
                 }
                 composable("add_account") {

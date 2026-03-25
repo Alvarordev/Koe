@@ -18,6 +18,7 @@ import com.example.tracker.domain.usecase.loan.GetCasualLoansUseCase
 import com.example.tracker.domain.usecase.loan.GetFormalLoansUseCase
 import com.example.tracker.domain.usecase.person.GetPersonsUseCase
 import com.example.tracker.domain.usecase.recurring.GetRecurringRulesUseCase
+import com.example.tracker.domain.usecase.recurring.GetSubscriptionRulesUseCase
 import com.example.tracker.domain.usecase.recurring.ProcessDueRulesUseCase
 import com.example.tracker.domain.usecase.transaction.CreateTransactionUseCase
 import com.example.tracker.domain.usecase.transaction.DeleteTransactionUseCase
@@ -29,6 +30,7 @@ import com.example.tracker.domain.usecase.transaction.GetTransactionsByDateRange
 import com.example.tracker.domain.usecase.subscription.GetSubscriptionServicesUseCase
 import com.example.tracker.domain.usecase.transaction.GetTotalByTypeInPeriodUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsUseCase
+import com.example.tracker.domain.usecase.database.ResetDatabaseUseCase
 import com.example.tracker.domain.usecase.yape.ProcessYapeShareImageUseCase
 import org.koin.dsl.module
 
@@ -69,6 +71,7 @@ val useCaseModule = module {
 
     // Recurring
     factory { GetRecurringRulesUseCase(get()) }
+    factory { GetSubscriptionRulesUseCase(get()) }
     factory { ProcessDueRulesUseCase(get()) }
 
     // Loans
@@ -80,4 +83,7 @@ val useCaseModule = module {
 
     // Yape
     factory { ProcessYapeShareImageUseCase(get(), get()) }
+
+    // Database
+    factory { ResetDatabaseUseCase(get()) }
 }
