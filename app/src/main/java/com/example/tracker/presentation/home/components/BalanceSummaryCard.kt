@@ -41,6 +41,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tracker.ui.theme.ExpenseRed
+import com.example.tracker.ui.theme.IncomeGreen
 import java.text.DecimalFormat
 
 @Composable
@@ -156,7 +158,7 @@ fun BalanceSummaryCard(
                             text = "-S/ ${df.format(expense)}",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.error
+                            color = ExpenseRed
                         )
                     }
                     Row(
@@ -173,7 +175,7 @@ fun BalanceSummaryCard(
                             text = "+S/ ${df.format(income)}",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.tertiary
+                            color = IncomeGreen
                         )
                     }
                     Row(

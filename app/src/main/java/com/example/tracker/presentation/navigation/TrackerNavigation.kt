@@ -317,7 +317,8 @@ fun TrackerScaffold() {
                         onNavigateBack = {
                             addViewModel.reset()
                             navController.popBackStack()
-                        }
+                        },
+
                     )
                 }
                 composable("add_transaction_amount") {

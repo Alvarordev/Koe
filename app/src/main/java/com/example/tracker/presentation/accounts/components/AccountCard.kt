@@ -19,9 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -31,7 +29,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tracker.data.enums.AccountType
@@ -46,15 +47,24 @@ private fun parseColor(hex: String): Color = runCatching {
     Color(hex.toColorInt())
 }.getOrDefault(Color(0xFF1A73E8))
 
+// Altura base de referencia (dp) sobre la cual se calculan todas las proporciones
+private const val BASE_CARD_HEIGHT_DP = 220f
+private const val CARD_ASPECT_RATIO = 1.58f
+
 @Composable
 fun AccountCard(
     account: Account,
     modifier: Modifier = Modifier,
-    scaleFactor: Float = 1f,
+    cardHeight: Dp = BASE_CARD_HEIGHT_DP.dp,
     onClick: () -> Unit = {}
 ) {
+    val density = LocalDensity.current
+    val s = remember(cardHeight) {
+        with(density) { cardHeight.toPx() } /
+                with(density) { BASE_CARD_HEIGHT_DP.dp.toPx() }
+    }
+
     val cardColor = parseColor(account.color)
-    val s = scaleFactor
     val currencySymbol = SupportedCurrency.entries
         .find { it.code == account.currencyCode }?.symbol ?: account.currencyCode
 
@@ -76,16 +86,18 @@ fun AccountCard(
         else -> account.currentBalance / 100.0
     }
 
-    val formatter = NumberFormat.getNumberInstance(Locale.US).apply {
-        minimumFractionDigits = 2
-        maximumFractionDigits = 2
+    val formatter = remember {
+        NumberFormat.getNumberInstance(Locale.US).apply {
+            minimumFractionDigits = 2
+            maximumFractionDigits = 2
+        }
     }
 
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(1.58f)
-            .clip(RoundedCornerShape((24 * s).dp))
+            .height(cardHeight)
+            .aspectRatio(CARD_ASPECT_RATIO)
+            .clip(RoundedCornerShape(scaled(24, s)))
             .background(backgroundGradient)
             .clickable(onClick = onClick)
             .clipToBounds()
@@ -93,9 +105,10 @@ fun AccountCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding((24 * s).dp),
+                .padding(scaled(24, s)),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
+            // --- Top row: nombre + icono ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -104,42 +117,23 @@ fun AccountCard(
                 Text(
                     text = account.name,
                     color = Color.White,
-                    fontSize = (18 * s).sp,
+                    fontSize = scaledSp(18, s),
                     fontWeight = FontWeight.Medium,
-                    lineHeight = (20 * s).sp
+                    lineHeight = scaledSp(20, s)
                 )
 
-                when {
-                    account.type == AccountType.CASH -> {
-                        Icon(
-                            imageVector = Icons.Default.AccountBalanceWallet,
-                            contentDescription = "Efectivo",
-                            tint = Color.White,
-                            modifier = Modifier.size((28 * s).dp)
-                        )
-                    }
-                    account.cardNetwork != null -> {
-                        CardNetworkIcon(network = account.cardNetwork, scaleFactor = s)
-                    }
-                    else -> {
-                        Icon(
-                            imageVector = Icons.Default.AccountBalanceWallet,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size((28 * s).dp)
-                        )
-                    }
-                }
+                AccountCardIcon(account = account, scaleFactor = s)
             }
 
+            // --- Centro: balance ---
             Column {
                 if (account.type == AccountType.CREDIT) {
                     Text(
                         text = "Disponible",
                         color = Color.White.copy(alpha = 0.7f),
-                        fontSize = (12 * s).sp,
+                        fontSize = scaledSp(12, s),
                         fontWeight = FontWeight.Normal,
-                        lineHeight = (14 * s).sp
+                        lineHeight = scaledSp(14, s)
                     )
                 }
 
@@ -147,57 +141,53 @@ fun AccountCard(
                     Text(
                         text = currencySymbol,
                         color = Color.White.copy(alpha = 0.9f),
-                        fontSize = (16 * s).sp,
+                        fontSize = scaledSp(16, s),
                         fontWeight = FontWeight.Medium,
-                        lineHeight = (18 * s).sp
+                        lineHeight = scaledSp(18, s)
                     )
 
-                    Spacer(modifier = Modifier.width((6 * s).dp))
+                    Spacer(modifier = Modifier.width(scaled(6, s)))
 
                     Text(
                         text = formatter.format(displayBalance),
                         color = Color.White,
-                        fontSize = (28 * s).sp,
+                        fontSize = scaledSp(28, s),
                         fontWeight = FontWeight.SemiBold,
-                        letterSpacing = (1 * s).sp,
-                        lineHeight = (32 * s).sp
+                        letterSpacing = scaledSp(1, s),
+                        lineHeight = scaledSp(32, s)
                     )
                 }
             }
 
+            // --- Bottom row: tipo + últimos 4 dígitos ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy((16 * s).dp),
-                    verticalAlignment = Alignment.Bottom,
-                    modifier = Modifier.padding(bottom = (4 * s).dp)
-                ) {
-                    val typeLabel = when (account.type) {
-                        AccountType.CASH -> "Efectivo"
-                        AccountType.DEBIT -> "Débito"
-                        AccountType.CREDIT -> "Crédito"
-                        AccountType.SAVINGS -> "Ahorros"
-                    }
-                    Text(
-                        text = typeLabel,
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = (14 * s).sp,
-                        fontWeight = FontWeight.Medium,
-                        lineHeight = (16 * s).sp
-                    )
+                val typeLabel = when (account.type) {
+                    AccountType.CASH -> "Efectivo"
+                    AccountType.DEBIT -> "Débito"
+                    AccountType.CREDIT -> "Crédito"
+                    AccountType.SAVINGS -> "Ahorros"
                 }
+                Text(
+                    text = typeLabel,
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = scaledSp(14, s),
+                    fontWeight = FontWeight.Medium,
+                    lineHeight = scaledSp(16, s),
+                    modifier = Modifier.padding(bottom = scaled(4, s))
+                )
 
                 if (account.lastFourDigits != null) {
                     Text(
                         text = "**** ${account.lastFourDigits}",
                         color = Color.White,
-                        fontSize = (18 * s).sp,
+                        fontSize = scaledSp(18, s),
                         fontWeight = FontWeight.Normal,
-                        letterSpacing = (2 * s).sp,
-                        lineHeight = (20 * s).sp
+                        letterSpacing = scaledSp(2, s),
+                        lineHeight = scaledSp(20, s)
                     )
                 }
             }
@@ -205,28 +195,73 @@ fun AccountCard(
     }
 }
 
+// ──────────────────────────────────────────────
+// Helpers de escalado
+// ──────────────────────────────────────────────
+
+/** Convierte un valor base (dp) aplicando el factor de escala. */
+private fun scaled(baseDp: Int, scaleFactor: Float): Dp =
+    (baseDp * scaleFactor).dp
+
+/** Convierte un valor base (sp) aplicando el factor de escala. */
+private fun scaledSp(baseSp: Int, scaleFactor: Float): TextUnit =
+    (baseSp * scaleFactor).sp
+
+// ──────────────────────────────────────────────
+// Iconos
+// ──────────────────────────────────────────────
+
 @Composable
-fun CardNetworkIcon(network: CardNetwork, modifier: Modifier = Modifier, scaleFactor: Float = 1f) {
+private fun AccountCardIcon(account: Account, scaleFactor: Float) {
+    when {
+        account.type == AccountType.CASH -> {
+            Icon(
+                imageVector = Icons.Default.AccountBalanceWallet,
+                contentDescription = "Efectivo",
+                tint = Color.White,
+                modifier = Modifier.size(scaled(28, scaleFactor))
+            )
+        }
+        account.cardNetwork != null -> {
+            CardNetworkIcon(network = account.cardNetwork, scaleFactor = scaleFactor)
+        }
+        else -> {
+            Icon(
+                imageVector = Icons.Default.AccountBalanceWallet,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(scaled(28, scaleFactor))
+            )
+        }
+    }
+}
+
+@Composable
+fun CardNetworkIcon(
+    network: CardNetwork,
+    modifier: Modifier = Modifier,
+    scaleFactor: Float = 1f
+) {
     val s = scaleFactor
     when (network) {
         CardNetwork.MASTERCARD -> {
             Box(
                 modifier = modifier
-                    .width((42 * s).dp)
-                    .height((26 * s).dp),
+                    .width(scaled(42, s))
+                    .height(scaled(26, s)),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .size((26 * s).dp)
+                        .size(scaled(26, s))
                         .align(Alignment.CenterStart)
                         .background(Color.White, CircleShape)
                 )
                 Box(
                     modifier = Modifier
-                        .size((26 * s).dp)
+                        .size(scaled(26, s))
                         .align(Alignment.CenterEnd)
-                        .border((1 * s).dp, Color.White, CircleShape)
+                        .border(scaled(1, s), Color.White, CircleShape)
                 )
             }
         }
@@ -235,8 +270,8 @@ fun CardNetworkIcon(network: CardNetwork, modifier: Modifier = Modifier, scaleFa
                 text = "VISA",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                fontSize = (20 * s).sp,
-                lineHeight = (22 * s).sp,
+                fontSize = scaledSp(20, s),
+                lineHeight = scaledSp(22, s),
                 modifier = modifier
             )
         }
@@ -245,8 +280,8 @@ fun CardNetworkIcon(network: CardNetwork, modifier: Modifier = Modifier, scaleFa
                 text = "AMEX",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                fontSize = (16 * s).sp,
-                lineHeight = (18 * s).sp,
+                fontSize = scaledSp(16, s),
+                lineHeight = scaledSp(18, s),
                 modifier = modifier
             )
         }
@@ -255,7 +290,7 @@ fun CardNetworkIcon(network: CardNetwork, modifier: Modifier = Modifier, scaleFa
                 imageVector = Icons.Default.AccountBalanceWallet,
                 contentDescription = null,
                 tint = Color.White,
-                modifier = modifier.size((28 * s).dp)
+                modifier = modifier.size(scaled(28, s))
             )
         }
     }

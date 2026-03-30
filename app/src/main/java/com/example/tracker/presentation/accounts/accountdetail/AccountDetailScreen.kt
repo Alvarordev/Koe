@@ -3,12 +3,17 @@ package com.example.tracker.presentation.accounts.accountdetail
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tracker.data.enums.AccountType
-import com.example.tracker.data.enums.SupportedCurrency
+import com.example.tracker.presentation.accounts.accountdetail.components.BalanceChart
 import com.example.tracker.presentation.accounts.components.AccountCard
 import com.example.tracker.presentation.components.DaySeparator
 import com.example.tracker.presentation.components.TransactionRow
@@ -54,10 +59,19 @@ private const val THUMBNAIL_WIDTH = 70f
 fun AccountDetailScreen(
     accountId: Long,
     onNavigateBack: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues(),
     viewModel: AccountDetailViewModel = koinViewModel { parametersOf(accountId) }
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val account = uiState.account
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues()
+    val topScaffoldPadding = contentPadding.calculateTopPadding()
+    val topInsetPadding = maxOf(statusBarPadding, topScaffoldPadding)
+    val bottomInsetPadding = maxOf(
+        contentPadding.calculateBottomPadding(),
+        navigationBarPadding.calculateBottomPadding()
+    )
 
     LaunchedEffect(uiState.isArchived) {
         if (uiState.isArchived) onNavigateBack()
@@ -83,11 +97,17 @@ fun AccountDetailScreen(
         )
     }
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            top = topInsetPadding,
+            bottom = bottomInsetPadding + 16.dp
+        )
+    ) {
         item {
             IconButton(
                 onClick = onNavigateBack,
-                modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+                modifier = Modifier.padding(start = 4.dp)
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -97,9 +117,6 @@ fun AccountDetailScreen(
         }
 
         if (account != null) {
-            val currencySymbol = SupportedCurrency.entries
-                .find { it.code == account.currencyCode }?.symbol ?: account.currencyCode
-
             val displayBalance = when (account.type) {
                 AccountType.CREDIT -> {
                     val available = (account.creditLimit ?: 0L) - (account.creditUsed ?: 0L)
@@ -119,8 +136,7 @@ fun AccountDetailScreen(
                 ) {
                     AccountCard(
                         account = account,
-                        modifier = Modifier.width(THUMBNAIL_WIDTH.dp),
-                        scaleFactor = THUMBNAIL_WIDTH / FULL_CARD_WIDTH
+                        cardHeight = 50.dp,
                     )
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -178,6 +194,22 @@ fun AccountDetailScreen(
                                 }
                             )
                         }
+                    }
+                }
+            }
+
+            if (account.type != AccountType.CREDIT && uiState.balanceHistory.size >= 2) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                    ) {
+                        BalanceChart(
+                            history = uiState.balanceHistory,
+                            currencyCode = account.currencyCode,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
             }
@@ -259,6 +291,6 @@ fun AccountDetailScreen(
             }
         }
 
-        item { Spacer(modifier = Modifier.height(32.dp)) }
+        item { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }

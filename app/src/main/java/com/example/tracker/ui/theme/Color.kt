@@ -26,5 +26,5 @@ val OnPrimaryContainerLight = Color(0xFF001A41)
 val OnPrimaryDark = Color(0xFF002F65)
 val PrimaryContainerDark = Color(0xFF1A3A5C)
 
-val ExpenseRed = Color(0xFFE53935)
-val IncomeGreen = Color(0xFF2E7D32)
+val ExpenseRed = Color(0xFFFF5252)
+val IncomeGreen = Color(0xFF2BD86E)

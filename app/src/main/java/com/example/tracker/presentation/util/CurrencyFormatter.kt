@@ -6,10 +6,12 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 object CurrencyFormatter {
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    private val dateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm", Locale.forLanguageTag("es"))
 
     fun formatBalance(amountMinor: Long, currencyCode: String): String {
         val symbol = SupportedCurrency.entries.find { it.code == currencyCode }?.symbol ?: currencyCode
@@ -36,6 +38,12 @@ object CurrencyFormatter {
             .atZone(ZoneId.systemDefault())
             .toLocalTime()
         return timeFormatter.format(time)
+    }
+
+    fun formatDateTime(epochMillis: Long): String {
+        val zonedDateTime = Instant.ofEpochMilli(epochMillis)
+            .atZone(ZoneId.systemDefault())
+        return dateTimeFormatter.format(zonedDateTime)
     }
 
     fun toLocalDate(epochMillis: Long): LocalDate {

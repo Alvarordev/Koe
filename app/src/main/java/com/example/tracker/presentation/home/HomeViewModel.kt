@@ -3,11 +3,14 @@ package com.example.tracker.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tracker.data.enums.TransactionType
+import com.example.tracker.data.model.Transaction
 import com.example.tracker.data.model.relations.TransactionWithDetails
 import com.example.tracker.domain.usecase.account.GetTotalAccountBalanceUseCase
+import com.example.tracker.domain.usecase.transaction.DeleteTransactionUseCase
 import com.example.tracker.domain.usecase.transaction.GetTotalByTypeInPeriodUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsByDateRangeUseCase
 import com.example.tracker.presentation.util.CurrencyFormatter
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,7 +39,8 @@ data class HomeUiState(
 class HomeViewModel(
     getTransactionsByDateRange: GetTransactionsByDateRangeUseCase,
     getTotalByTypeInPeriod: GetTotalByTypeInPeriodUseCase,
-    getTotalAccountBalance: GetTotalAccountBalanceUseCase
+    getTotalAccountBalance: GetTotalAccountBalanceUseCase,
+    private val deleteTransactionUseCase: DeleteTransactionUseCase
 ) : ViewModel() {
 
     private val _dateFilterMode = MutableStateFlow<DateFilterMode>(DateFilterMode.Month)
@@ -85,5 +89,11 @@ class HomeViewModel(
 
     fun onDismissDateFilterDialog() {
         _showDateFilterDialog.value = false
+    }
+
+    fun deleteTransaction(transaction: Transaction) {
+        viewModelScope.launch {
+            deleteTransactionUseCase(transaction)
+        }
     }
 }

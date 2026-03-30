@@ -1,6 +1,7 @@
 package com.example.tracker.presentation.categories
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -23,20 +24,19 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import com.example.tracker.data.model.Category
 import com.example.tracker.data.model.relations.CategoryIdSummary
 import com.example.tracker.data.model.relations.RecurringRuleWithDetails
@@ -50,7 +50,8 @@ fun CategoriesScreen(
     onCategoryClick: (Long) -> Unit,
     onAddCategoryClick: () -> Unit = {}
 ) {
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val pagerState = rememberPagerState(pageCount = { 3 })
+    val scope = rememberCoroutineScope()
     val tabs = listOf("Gastos", "Ingresos", "Suscripciones")
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues()
 
@@ -66,8 +67,7 @@ fun CategoriesScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
                 text = "Categorias",
@@ -88,12 +88,16 @@ fun CategoriesScreen(
 
         Row(modifier = Modifier.padding(horizontal = 8.dp)) {
             tabs.forEachIndexed { index, title ->
-                TextButton(onClick = { selectedTabIndex = index }) {
+                TextButton(onClick = {
+                    scope.launch {
+                        pagerState.animateScrollToPage(index)
+                    }
+                }) {
                     Text(
                         text = title,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (selectedTabIndex == index)
+                        color = if (pagerState.currentPage == index)
                             MaterialTheme.colorScheme.primary
                         else
                             MaterialTheme.colorScheme.onSurfaceVariant
@@ -114,22 +118,27 @@ fun CategoriesScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        when (selectedTabIndex) {
-            0 -> CategoryGridContent(
-                categories = uiState.expenseCategories,
-                summaries = uiState.categorySummaries,
-                onCategoryClick = onCategoryClick,
-                bottomPadding = contentPadding
-            )
-            1 -> CategoryGridContent(
-                categories = uiState.incomeCategories,
-                summaries = uiState.categorySummaries,
-                onCategoryClick = onCategoryClick,
-                bottomPadding = contentPadding
-            )
-            2 -> SubscriptionsContent(
-                subscriptionRules = uiState.subscriptionRules
-            )
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            when (page) {
+                0 -> CategoryGridContent(
+                    categories = uiState.expenseCategories,
+                    summaries = uiState.categorySummaries,
+                    onCategoryClick = onCategoryClick,
+                    bottomPadding = contentPadding
+                )
+                1 -> CategoryGridContent(
+                    categories = uiState.incomeCategories,
+                    summaries = uiState.categorySummaries,
+                    onCategoryClick = onCategoryClick,
+                    bottomPadding = contentPadding
+                )
+                2 -> SubscriptionsContent(
+                    subscriptionRules = uiState.subscriptionRules
+                )
+            }
         }
     }
 }

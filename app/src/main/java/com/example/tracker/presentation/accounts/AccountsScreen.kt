@@ -83,7 +83,6 @@ fun AccountsScreen(
             ) { account ->
                 AccountCard(
                     account = account,
-                    modifier = Modifier.width(cardWidth),
                     onClick = { onAccountClick(account.id) }
                 )
             }

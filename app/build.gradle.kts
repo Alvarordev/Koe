@@ -83,6 +83,9 @@ dependencies {
     // Location
     implementation(libs.play.services.location)
 
+    // Google Maps Compose
+    implementation(libs.maps.compose)
+
     // ML Kit Text Recognition
     implementation("com.google.mlkit:text-recognition:16.0.1")
 

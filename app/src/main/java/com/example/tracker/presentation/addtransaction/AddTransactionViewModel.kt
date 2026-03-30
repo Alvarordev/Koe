@@ -13,12 +13,14 @@ import com.example.tracker.data.model.Transaction
 import com.example.tracker.data.preferences.ThemePreferences
 import com.example.tracker.data.preferences.YapePreferences
 import com.example.tracker.domain.exception.DuplicateTransactionException
+import com.example.tracker.domain.repository.TransactionRepository
 import com.example.tracker.domain.usecase.account.GetAccountsUseCase
 import com.example.tracker.domain.usecase.category.GetCategoriesUseCase
 import com.example.tracker.data.model.relations.CategorySummary
 import com.example.tracker.domain.usecase.transaction.CreateTransactionUseCase
 import com.example.tracker.domain.usecase.transaction.GetAllCategorySummariesUseCase
 import com.example.tracker.domain.usecase.transaction.GetCategorySummaryUseCase
+import com.example.tracker.domain.usecase.transaction.UpdateTransactionUseCase
 import com.example.tracker.domain.usecase.yape.ProcessYapeShareImageUseCase
 import java.time.YearMonth
 import java.time.ZoneId
@@ -33,6 +35,8 @@ class AddTransactionViewModel(
     private val getCategories: GetCategoriesUseCase,
     private val getAccounts: GetAccountsUseCase,
     private val createTransaction: CreateTransactionUseCase,
+    private val updateTransaction: UpdateTransactionUseCase,
+    private val transactionRepository: TransactionRepository,
     private val themePreferences: ThemePreferences,
     private val processYapeShareImage: ProcessYapeShareImageUseCase,
     private val yapePreferences: YapePreferences,
@@ -46,6 +50,7 @@ class AddTransactionViewModel(
 
     private var yapeDateMillis: Long? = null
     private var categorySummaryJob: Job? = null
+    private var editingTransactionId: Long? = null
 
     init {
         loadCategories()
@@ -116,6 +121,7 @@ class AddTransactionViewModel(
     fun clearCategory() {
         categorySummaryJob?.cancel()
         categorySummaryJob = null
+        editingTransactionId = null
         _uiState.update {
             it.copy(
                 selectedCategory = null,
@@ -125,6 +131,42 @@ class AddTransactionViewModel(
                 categorySummary = null,
                 selectedDate = System.currentTimeMillis()
             )
+        }
+    }
+
+    fun loadTransactionForEdit(transaction: Transaction, account: Account, category: Category) {
+        editingTransactionId = transaction.id
+        val amountDisplay = centsToDisplayString(transaction.amount)
+        _uiState.update {
+            it.copy(
+                amountString = amountDisplay,
+                description = transaction.description ?: "",
+                selectedAccount = account,
+                selectedCategory = category,
+                selectedDate = transaction.date,
+                isLocationEnabled = transaction.latitude != null && transaction.longitude != null,
+                latitude = transaction.latitude,
+                longitude = transaction.longitude,
+                submitError = null,
+                submitSuccess = false,
+                categorySummary = null
+            )
+        }
+    }
+
+    fun getEditingTransactionId(): Long? = editingTransactionId
+
+    fun loadTransactionById(transactionId: Long) {
+        viewModelScope.launch {
+            transactionRepository.getById(transactionId).collect { transactionWithDetails ->
+                if (transactionWithDetails != null) {
+                    loadTransactionForEdit(
+                        transaction = transactionWithDetails.transaction,
+                        account = transactionWithDetails.account,
+                        category = transactionWithDetails.category
+                    )
+                }
+            }
         }
     }
 
@@ -257,29 +299,36 @@ class AddTransactionViewModel(
 
         viewModelScope.launch {
             try {
-                createTransaction(
-                    Transaction(
-                        type = transactionType,
-                        amount = amountInMinorUnits,
-                        description = state.description.ifBlank { null },
-                        accountId = account.id,
-                        categoryId = category.id,
-                        date = transactionDate,
-                        latitude = if (state.isLocationEnabled) state.latitude else null,
-                        longitude = if (state.isLocationEnabled) state.longitude else null
-                    )
+                val isEditing = editingTransactionId != null
+                val transaction = Transaction(
+                    id = editingTransactionId ?: 0L,
+                    type = transactionType,
+                    amount = amountInMinorUnits,
+                    description = state.description.ifBlank { null },
+                    accountId = account.id,
+                    categoryId = category.id,
+                    date = transactionDate,
+                    latitude = if (state.isLocationEnabled) state.latitude else null,
+                    longitude = if (state.isLocationEnabled) state.longitude else null,
+                    createdAt = if (isEditing) 0L else System.currentTimeMillis()
                 )
 
-                if (state.yapeOperationNumber != null) {
-                    val dedupKey = "yape_share_${state.yapeOperationNumber}"
-                    processedNotificationDao.insert(
-                        ProcessedNotification(
-                            dedupKey = dedupKey,
-                            operationNumber = state.yapeOperationNumber,
-                            amount = amountInMinorUnits,
-                            type = transactionType.name
+                if (isEditing) {
+                    updateTransaction(transaction)
+                } else {
+                    createTransaction(transaction)
+
+                    if (state.yapeOperationNumber != null) {
+                        val dedupKey = "yape_share_${state.yapeOperationNumber}"
+                        processedNotificationDao.insert(
+                            ProcessedNotification(
+                                dedupKey = dedupKey,
+                                operationNumber = state.yapeOperationNumber,
+                                amount = amountInMinorUnits,
+                                type = transactionType.name
+                            )
                         )
-                    )
+                    }
                 }
 
                 _uiState.update { it.copy(isSubmitting = false, submitSuccess = true) }
@@ -293,6 +342,7 @@ class AddTransactionViewModel(
         categorySummaryJob?.cancel()
         categorySummaryJob = null
         yapeDateMillis = null
+        editingTransactionId = null
         _uiState.update {
             it.copy(
                 selectedCategory = null,

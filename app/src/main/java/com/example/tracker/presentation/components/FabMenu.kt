@@ -1,5 +1,6 @@
 package com.example.tracker.presentation.components
 
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -18,10 +19,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -38,6 +42,7 @@ fun FabMenu(
 
     FloatingActionButtonMenu(
         expanded = expanded,
+        modifier = Modifier.offset(x = (12).dp, y = (12).dp),
         button = {
             ToggleFloatingActionButton(
                 checked = expanded,
