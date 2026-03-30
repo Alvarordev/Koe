@@ -1,5 +1,8 @@
 package com.example.tracker.presentation.addtransaction
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -51,12 +54,14 @@ import com.example.tracker.data.model.Category
 import com.example.tracker.data.model.relations.CategorySummary
 import com.example.tracker.presentation.components.EmojiText
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryPickerScreen(
     uiState: AddTransactionUiState,
     onCategorySelected: (Category) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues()
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues()
@@ -142,15 +147,22 @@ fun CategoryPickerScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(filteredCategories) { category ->
-                CategoryGridItem(
-                    category = category,
-                    summary = uiState.categorySummaries[category.id],
-                    currencyCode = currencyCode,
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onCategorySelected(category)
-                    }
-                )
+                with(sharedTransitionScope) {
+                    CategoryGridItem(
+                        category = category,
+                        summary = uiState.categorySummaries[category.id],
+                        currencyCode = currencyCode,
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onCategorySelected(category)
+                        },
+                        modifier = Modifier.
+                            sharedElement(
+                                rememberSharedContentState(key = "category_${category.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope
+                            )
+                    )
+                }
             }
         }
     }
@@ -161,7 +173,8 @@ private fun CategoryGridItem(
     category: Category,
     summary: CategorySummary?,
     currencyCode: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val categoryColor = try {
         Color(category.color.toColorInt())
@@ -174,7 +187,7 @@ private fun CategoryGridItem(
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(19.dp))
             .background(MaterialTheme.colorScheme.surface)

@@ -5,6 +5,9 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -74,7 +77,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AmountEntryScreen(
     uiState: AddTransactionUiState,
@@ -85,10 +88,14 @@ fun AmountEntryScreen(
     onClearCategory: () -> Unit,
     onDateSelected: (Long) -> Unit,
     onLocationToggle: (Boolean, Double?, Double?) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues()
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues()
+
+    val category = uiState.selectedCategory
 
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
@@ -245,10 +252,24 @@ fun AmountEntryScreen(
         }
 
         Column {
-            CategoryCard(
-                uiState = uiState,
-                onClick = onClearCategory
-            )
+            val category = uiState.selectedCategory
+            if (category != null) {
+                with(sharedTransitionScope) {
+                    CategoryCard(
+                        uiState = uiState,
+                        onClick = onClearCategory,
+                        modifier = Modifier.sharedElement(
+                            rememberSharedContentState(key = "category_${category.id}"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        )
+                    )
+                }
+            } else {
+                CategoryCard(
+                    uiState = uiState,
+                    onClick = onClearCategory
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -358,7 +379,8 @@ fun AmountEntryScreen(
 @Composable
 private fun CategoryCard(
     uiState: AddTransactionUiState,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val category = uiState.selectedCategory ?: return
 
@@ -372,7 +394,7 @@ private fun CategoryCard(
     val summary = uiState.categorySummary
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(19.dp))
             .background(MaterialTheme.colorScheme.surface)

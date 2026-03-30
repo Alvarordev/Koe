@@ -1,6 +1,12 @@
 package com.example.tracker.presentation.navigation
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -85,7 +91,7 @@ private val bottomBarSuppressedRoutes = setOf(
     "add_transaction_amount"
 )
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TrackerScaffold() {
     val navController = rememberNavController()
@@ -131,18 +137,19 @@ fun TrackerScaffold() {
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        floatingActionButton = {
-            if (showBottomBar) {
-                if (currentTabRoute == TrackerTab.Home.route) {
-                    FabMenu(
-                        navController = navController,
-                        onTransactionPress = { navController.navigate("add_transaction_category") }
-                    )
+    SharedTransitionLayout {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            floatingActionButton = {
+                if (showBottomBar) {
+                    if (currentTabRoute == TrackerTab.Home.route) {
+                        FabMenu(
+                            navController = navController,
+                            onTransactionPress = { navController.navigate("add_transaction_category") }
+                        )
+                    }
                 }
-            }
-        },
+            },
             bottomBar = {
                 if (showBottomBar) {
                     Column {
@@ -155,12 +162,15 @@ fun TrackerScaffold() {
                             tonalElevation = 0.dp
                         ) {
                             TrackerTab.entries.forEach { tab ->
-                                val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
+                                val selected =
+                                    currentDestination?.hierarchy?.any { it.route == tab.route } == true
                                 NavigationBarItem(
                                     selected = selected,
                                     onClick = {
                                         navController.navigate(tab.route) {
-                                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                            popUpTo(navController.graph.startDestinationId) {
+                                                saveState = true
+                                            }
                                             launchSingleTop = true
                                             restoreState = true
                                         }
@@ -199,7 +209,9 @@ fun TrackerScaffold() {
             NavHost(
                 navController = navController,
                 startDestination = TrackerTab.Home.route,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                enterTransition = { fadeIn(animationSpec = tween(300, easing = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f))) },
+                exitTransition = { fadeOut(animationSpec = tween(200, easing = CubicBezierEasing(0.4f, 0.0f, 1.0f, 1.0f))) },
             ) {
                 composable(TrackerTab.Home.route) {
                     HomeScreen(contentPadding = innerPadding)
@@ -244,7 +256,8 @@ fun TrackerScaffold() {
                     )
                 }
                 composable("account_detail/{accountId}") { backStackEntry ->
-                    val accountId = backStackEntry.arguments?.getString("accountId")?.toLongOrNull() ?: 0L
+                    val accountId =
+                        backStackEntry.arguments?.getString("accountId")?.toLongOrNull() ?: 0L
                     AccountDetailScreen(
                         accountId = accountId,
                         onNavigateBack = { navController.popBackStack() }
@@ -318,6 +331,8 @@ fun TrackerScaffold() {
                             addViewModel.reset()
                             navController.popBackStack()
                         },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = this@composable
 
                     )
                 }
@@ -337,20 +352,22 @@ fun TrackerScaffold() {
                         onNavigateBack = {
                             addViewModel.clearCategory()
                             navController.popBackStack()
-                        }
+                        },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = this@composable
                     )
                 }
             }
         }
 
-    if (showAddCategorySheet || editCategoryId != null) {
-        AddEditCategorySheet(
-            categoryId = editCategoryId,
-            onDismiss = {
-                showAddCategorySheet = false
-                editCategoryId = null
-            }
-        )
+        if (showAddCategorySheet || editCategoryId != null) {
+            AddEditCategorySheet(
+                categoryId = editCategoryId,
+                onDismiss = {
+                    showAddCategorySheet = false
+                    editCategoryId = null
+                }
+            )
+        }
     }
-
 }
