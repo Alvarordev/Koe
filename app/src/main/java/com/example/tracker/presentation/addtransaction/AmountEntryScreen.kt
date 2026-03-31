@@ -180,7 +180,9 @@ fun AmountEntryScreen(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Column {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -204,6 +206,8 @@ fun AmountEntryScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
+
+                Spacer(modifier = Modifier.weight(1f))
             }
 
             Spacer(Modifier.height(8.dp))
@@ -212,11 +216,13 @@ fun AmountEntryScreen(
                 uiState = uiState,
                 onAccountSelected = onAccountSelected
             )
-            Spacer(modifier = Modifier.height(56.dp))
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = currencySymbol,
@@ -237,7 +243,6 @@ fun AmountEntryScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
             if (uiState.submitError != null) {
                 Text(
                     text = uiState.submitError,
@@ -248,7 +253,6 @@ fun AmountEntryScreen(
                         .padding(bottom = 4.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
         Column {

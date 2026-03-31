@@ -50,8 +50,10 @@ import com.example.tracker.presentation.components.AnimatedAmountText
 import com.example.tracker.presentation.components.EmojiText
 import com.example.tracker.ui.theme.ExpenseRed
 import com.example.tracker.ui.theme.IncomeGreen
+import com.google.android.gms.maps.GoogleMapOptions
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapColorScheme
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
@@ -134,7 +136,7 @@ fun TransactionDetailSheet(
                     maxFontSize = 60.sp,
                     minFontSize = 32.sp,
                     shrinkThreshold = 6,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = amountColor,
                     modifier = Modifier
                 )
@@ -146,7 +148,7 @@ fun TransactionDetailSheet(
             Text(
                 text = dateText,
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -163,15 +165,15 @@ fun TransactionDetailSheet(
                     Text(
                         text = "Categoría",
                         fontWeight = FontWeight.Normal,
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.weight(1f))
-                    EmojiText(text = category.emoji, style = TextStyle(fontSize = 16.sp))
+                    EmojiText(text = category.emoji, style = TextStyle(fontSize = 15.sp))
                     Text(
                         text = " ${category.name}",
                         fontWeight = FontWeight.Medium,
-                        fontSize = 16.sp,
+                        fontSize = 15.sp,
                         color = categoryColor,
                     )
                 }
@@ -185,7 +187,7 @@ fun TransactionDetailSheet(
                     Text(
                         text = "Cuenta",
                         fontWeight = FontWeight.Normal,
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.weight(1f))
@@ -194,13 +196,13 @@ fun TransactionDetailSheet(
                     ) {
                         AccountCard(
                             account = account,
-                            cardHeight = 16.dp,
+                            cardHeight = 15.dp,
                         )
                         Spacer(Modifier.size(8.dp))
                         Text(
                             text = account.name,
                             fontWeight = FontWeight.Medium,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -216,7 +218,7 @@ fun TransactionDetailSheet(
                         Text(
                             text = "Descripción",
                             fontWeight = FontWeight.Normal,
-                            fontSize = 16.sp,
+                            fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.weight(1f))
@@ -224,7 +226,7 @@ fun TransactionDetailSheet(
                         Text(
                             text = txn.description,
                             fontWeight = FontWeight.Medium,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -294,7 +296,10 @@ fun TransactionDetailSheet(
                             tiltGesturesEnabled = false,
                             rotationGesturesEnabled = false,
                             zoomGesturesEnabled = false
-                        )
+                        ),
+                        googleMapOptionsFactory = {
+                            GoogleMapOptions().mapColorScheme(MapColorScheme.FOLLOW_SYSTEM)
+                        }
                     ) {
                         Marker(state = rememberMarkerState(position = position))
                     }

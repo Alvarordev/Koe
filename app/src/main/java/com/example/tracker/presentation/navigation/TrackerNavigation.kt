@@ -7,15 +7,15 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,12 +29,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -61,6 +58,9 @@ import com.example.tracker.presentation.settings.yapesetup.screens.YapeSetupAcco
 import com.example.tracker.presentation.settings.yapesetup.screens.YapeSetupIntroScreen
 import com.example.tracker.presentation.settings.yapesetup.screens.YapeSetupPermissionScreen
 import com.example.tracker.presentation.settings.yapesetup.screens.YapeStatusScreen
+import com.example.tracker.presentation.subscriptions.SubscriptionViewModel
+import com.example.tracker.presentation.subscriptions.detail.SubscriptionDetailScreen
+import com.example.tracker.presentation.subscriptions.picker.SubscriptionPickerScreen
 import com.example.tracker.presentation.transfer.TransferAmountScreen
 import com.example.tracker.presentation.transfer.TransferSourceScreen
 import com.example.tracker.presentation.transfer.TransferViewModel
@@ -88,7 +88,9 @@ private val bottomBarSuppressedRoutes = setOf(
     "transfer_source",
     "transfer_amount",
     "add_transaction_category",
-    "add_transaction_amount"
+    "add_transaction_amount",
+    "subscription_picker",
+    "subscription_detail/{iconResName}"
 )
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -101,20 +103,18 @@ fun TrackerScaffold() {
 
     val addViewModel: AddTransactionViewModel = koinViewModel()
     val addUiState by addViewModel.uiState.collectAsState()
-    val haptic = LocalHapticFeedback.current
 
     val activity = LocalActivity.current as? MainActivity
     val sharedImageUri by activity?.sharedImageUri?.collectAsState() ?: remember { mutableStateOf(null) }
 
     val transferViewModel: TransferViewModel = koinViewModel()
     val transferUiState by transferViewModel.uiState.collectAsState()
+
+    val subscriptionViewModel: SubscriptionViewModel = koinViewModel()
+    val pickerState by subscriptionViewModel.pickerState.collectAsState()
+    val detailState by subscriptionViewModel.detailState.collectAsState()
     var showAddCategorySheet by remember { mutableStateOf(false) }
     var editCategoryId by remember { mutableStateOf<Long?>(null) }
-
-    val tabFabActions: Map<String, () -> Unit> = mapOf(
-        TrackerTab.Accounts.route to { navController.navigate("add_account") },
-        TrackerTab.Categories.route to { showAddCategorySheet = true }
-    )
 
     val showBottomBar = currentRoute !in bottomBarSuppressedRoutes
     val currentTabRoute = TrackerTab.entries.firstOrNull { tab ->
@@ -218,7 +218,6 @@ fun TrackerScaffold() {
                 }
                 composable(TrackerTab.Accounts.route) {
                     AccountsScreen(
-                        contentPadding = innerPadding,
                         onAccountClick = { accountId ->
                             navController.navigate("account_detail/$accountId")
                         },
@@ -234,7 +233,9 @@ fun TrackerScaffold() {
                         onCategoryClick = { categoryId ->
                             editCategoryId = categoryId
                         },
-                        onAddCategoryClick = { showAddCategorySheet = true }
+                        onAddCategoryClick = { showAddCategorySheet = true },
+                        onAddSubscription = { navController.navigate("subscription_picker") },
+                        onSubscriptionClick = { navController.navigate("subscription_picker") }
                     )
                 }
                 composable(TrackerTab.Settings.route) {
@@ -357,6 +358,70 @@ fun TrackerScaffold() {
                         animatedVisibilityScope = this@composable
                     )
                 }
+                composable("subscription_picker",
+                    enterTransition = {
+                        slideInVertically(
+                            initialOffsetY = { it/2 }, // 👈 desde abajo
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)
+                            )
+                        ) + fadeIn()
+                    },
+                    exitTransition = {
+                        slideOutVertically(
+                            targetOffsetY = { it/2 }, // 👈 hacia abajo
+                            animationSpec = tween(250)
+                        ) + fadeOut()
+                    },
+                    popEnterTransition = {
+                        slideInVertically(
+                            initialOffsetY = { it },
+                            animationSpec = tween(300)
+                        ) + fadeIn()
+                    },
+                    popExitTransition = {
+                        slideOutVertically(
+                            targetOffsetY = { it },
+                            animationSpec = tween(250)
+                        ) + fadeOut()
+                    }
+                    ) {
+                    SubscriptionPickerScreen(
+                        uiState = pickerState,
+                        onQueryChange = subscriptionViewModel::onQueryChange,
+                        onServiceSelected = { sub ->
+                            navController.navigate("subscription_detail/${sub.iconResName}")
+                        },
+                        onCreateCustom = { _ ->
+                            navController.navigate("subscription_detail/custom")
+                        },
+                        onNavigateBack = { navController.popBackStack() },
+                    )
+                }
+                composable("subscription_detail/{iconResName}") { backStackEntry ->
+                    val iconResName = backStackEntry.arguments?.getString("iconResName")
+                    val resolvedIconResName = if (iconResName == "custom") null else iconResName
+                    LaunchedEffect(iconResName) {
+                        subscriptionViewModel.initDetail(resolvedIconResName)
+                    }
+                    LaunchedEffect(detailState.submitSuccess) {
+                        if (detailState.submitSuccess) {
+                            navController.popBackStack(TrackerTab.Categories.route, inclusive = false)
+                            subscriptionViewModel.resetDetail()
+                        }
+                    }
+                    SubscriptionDetailScreen(
+                        uiState = detailState,
+                        onAmountChange = subscriptionViewModel::onAmountChange,
+                        onBillingDayChange = subscriptionViewModel::onBillingDayChange,
+                        onSelectAccount = subscriptionViewModel::onSelectAccount,
+                        onCustomNameChange = subscriptionViewModel::onCustomNameChange,
+                        onEmojiChange = subscriptionViewModel::onEmojiChange,
+                        onSubmit = subscriptionViewModel::submit,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
         }
 
@@ -369,5 +434,7 @@ fun TrackerScaffold() {
                 }
             )
         }
+
+
     }
 }

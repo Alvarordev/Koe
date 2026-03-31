@@ -27,8 +27,8 @@ object CurrencyFormatter {
         val formatted = String.format("%.2f", value)
 
         return when (type) {
-            TransactionType.EXPENSE -> "- $symbol$formatted"
-            TransactionType.INCOME -> "+ $symbol$formatted"
+            TransactionType.EXPENSE -> "$symbol$formatted"
+            TransactionType.INCOME -> "$symbol$formatted"
             else -> "$symbol$formatted"
         }
     }

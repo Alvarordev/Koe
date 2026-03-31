@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -38,12 +37,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tracker.ui.theme.ExpenseRed
 import com.example.tracker.ui.theme.IncomeGreen
 import java.text.DecimalFormat
+import com.example.tracker.R
 
 @Composable
 fun BalanceSummaryCard(
@@ -91,7 +92,7 @@ fun BalanceSummaryCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.AccountBalanceWallet,
+                    painter = painterResource(R.drawable.credit_card_solid),
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.primary
@@ -106,7 +107,7 @@ fun BalanceSummaryCard(
                 Text(
                     text = "S/ ${df.format(totalAccountBalance)}",
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Icon(
@@ -150,23 +151,6 @@ fun BalanceSummaryCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Gastos",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "-S/ ${df.format(expense)}",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = ExpenseRed
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
                             text = "Ingresos",
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -176,6 +160,23 @@ fun BalanceSummaryCard(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = IncomeGreen
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Gastos",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "-S/ ${df.format(expense)}",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ExpenseRed
                         )
                     }
                     Row(

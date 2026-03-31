@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -76,26 +77,29 @@ fun TransactionRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = txn.description ?: category.name,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                lineHeight = 12.sp,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = "${account.name} \u00B7 ${CurrencyFormatter.formatTime(txn.date)}",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Normal,
+                lineHeight = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
-
         Text(
             text = CurrencyFormatter.formatAmount(txn.amount, account.currencyCode, txn.type),
-            style = MaterialTheme.typography.labelLarge,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Normal,
+            lineHeight = 12.sp,
             color = amountColor
         )
     }

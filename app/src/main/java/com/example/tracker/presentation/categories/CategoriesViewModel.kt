@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.tracker.data.enums.CategoryType
 import com.example.tracker.domain.usecase.category.ArchiveCategoryUseCase
 import com.example.tracker.domain.usecase.category.GetCategoriesUseCase
-import com.example.tracker.domain.usecase.recurring.GetSubscriptionRulesUseCase
+import com.example.tracker.domain.usecase.subscription.GetActiveSubscriptionsUseCase
 import com.example.tracker.domain.usecase.transaction.GetAllCategorySummariesUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +17,7 @@ import java.time.ZoneId
 
 class CategoriesViewModel(
     getCategories: GetCategoriesUseCase,
-    getSubscriptionRules: GetSubscriptionRulesUseCase,
+    getActiveSubscriptions: GetActiveSubscriptionsUseCase,
     getAllCategorySummaries: GetAllCategorySummariesUseCase,
     private val archiveCategoryUseCase: ArchiveCategoryUseCase
 ) : ViewModel() {
@@ -28,9 +28,9 @@ class CategoriesViewModel(
 
     val uiState: StateFlow<CategoriesUiState> = combine(
         getCategories(),
-        getSubscriptionRules(),
+        getActiveSubscriptions(),
         getAllCategorySummaries(monthStart, monthEnd)
-    ) { categories, subscriptionRules, summaries ->
+    ) { categories, subscriptions, summaries ->
         val summaryMap = summaries.associateBy { it.categoryId }
         CategoriesUiState(
             expenseCategories = categories
@@ -40,7 +40,7 @@ class CategoriesViewModel(
                 .filter { it.type == CategoryType.INCOME && !it.isArchived }
                 .sortedBy { it.sortOrder },
             categorySummaries = summaryMap,
-            subscriptionRules = subscriptionRules,
+            subscriptions = subscriptions,
             isLoading = false
         )
     }.stateIn(

@@ -47,7 +47,6 @@ private fun parseColor(hex: String): Color = runCatching {
     Color(hex.toColorInt())
 }.getOrDefault(Color(0xFF1A73E8))
 
-// Altura base de referencia (dp) sobre la cual se calculan todas las proporciones
 private const val BASE_CARD_HEIGHT_DP = 220f
 private const val CARD_ASPECT_RATIO = 1.58f
 
@@ -97,7 +96,7 @@ fun AccountCard(
         modifier = modifier
             .height(cardHeight)
             .aspectRatio(CARD_ASPECT_RATIO)
-            .clip(RoundedCornerShape(scaled(24, s)))
+            .clip(RoundedCornerShape(scaled(20, s)))
             .background(backgroundGradient)
             .clickable(onClick = onClick)
             .clipToBounds()
@@ -105,10 +104,9 @@ fun AccountCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(scaled(24, s)),
+                .padding(scaled(20, s)),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // --- Top row: nombre + icono ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -125,7 +123,6 @@ fun AccountCard(
                 AccountCardIcon(account = account, scaleFactor = s)
             }
 
-            // --- Centro: balance ---
             Column {
                 if (account.type == AccountType.CREDIT) {
                     Text(
@@ -159,7 +156,6 @@ fun AccountCard(
                 }
             }
 
-            // --- Bottom row: tipo + últimos 4 dígitos ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -195,21 +191,12 @@ fun AccountCard(
     }
 }
 
-// ──────────────────────────────────────────────
-// Helpers de escalado
-// ──────────────────────────────────────────────
 
-/** Convierte un valor base (dp) aplicando el factor de escala. */
 private fun scaled(baseDp: Int, scaleFactor: Float): Dp =
     (baseDp * scaleFactor).dp
 
-/** Convierte un valor base (sp) aplicando el factor de escala. */
 private fun scaledSp(baseSp: Int, scaleFactor: Float): TextUnit =
     (baseSp * scaleFactor).sp
-
-// ──────────────────────────────────────────────
-// Iconos
-// ──────────────────────────────────────────────
 
 @Composable
 private fun AccountCardIcon(account: Account, scaleFactor: Float) {

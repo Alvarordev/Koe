@@ -21,8 +21,8 @@ fun DaySeparator(date: LocalDate, modifier: Modifier = Modifier) {
 
     Text(
         text = "${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, LocalLocale.current.platformLocale)}",
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.fillMaxWidth().padding(top = 20.dp, bottom = 4.dp)
     )

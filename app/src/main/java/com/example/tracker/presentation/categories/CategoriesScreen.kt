@@ -1,7 +1,6 @@
 package com.example.tracker.presentation.categories
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -32,23 +31,27 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import com.example.tracker.data.model.Category
 import com.example.tracker.data.model.relations.CategoryIdSummary
-import com.example.tracker.data.model.relations.RecurringRuleWithDetails
+import com.example.tracker.data.model.relations.SubscriptionWithDetails
 import com.example.tracker.presentation.categories.components.CategoryGridCard
-import com.example.tracker.presentation.categories.components.SubscriptionServiceItem
+import com.example.tracker.presentation.subscriptions.components.SubscriptionRow
 
 @Composable
 fun CategoriesScreen(
     contentPadding: PaddingValues,
     uiState: CategoriesUiState,
     onCategoryClick: (Long) -> Unit,
-    onAddCategoryClick: () -> Unit = {}
+    onAddCategoryClick: () -> Unit = {},
+    onAddSubscription: () -> Unit = {},
+    onSubscriptionClick: (Long) -> Unit = {}
 ) {
     val pagerState = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
@@ -67,7 +70,8 @@ fun CategoriesScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Categorias",
@@ -136,7 +140,9 @@ fun CategoriesScreen(
                     bottomPadding = contentPadding
                 )
                 2 -> SubscriptionsContent(
-                    subscriptionRules = uiState.subscriptionRules
+                    subscriptions = uiState.subscriptions,
+                    onAddSubscription = onAddSubscription,
+                    onSubscriptionClick = onSubscriptionClick
                 )
             }
         }
@@ -177,20 +183,44 @@ private fun CategoryGridContent(
 
 @Composable
 private fun SubscriptionsContent(
-    subscriptionRules: List<RecurringRuleWithDetails>
+    subscriptions: List<SubscriptionWithDetails>,
+    onAddSubscription: () -> Unit,
+    onSubscriptionClick: (Long) -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        items(
-            items = subscriptionRules,
-            key = { it.rule.id }
-        ) { ruleWithDetails ->
-            SubscriptionServiceItem(ruleWithDetails = ruleWithDetails)
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
+    if (subscriptions.isEmpty()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Aún no hay nada aquí. Dale seguimiento a tus suscripciones",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
             )
+            Spacer(modifier = Modifier.height(12.dp))
+            TextButton(onClick = onAddSubscription) {
+                Text(text = "Agregar suscripción")
+            }
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            items(
+                items = subscriptions,
+                key = { it.subscription.id }
+            ) { subscriptionWithDetails ->
+                SubscriptionRow(
+                    subscription = subscriptionWithDetails,
+                    onClick = { onSubscriptionClick(subscriptionWithDetails.subscription.id) },
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         }
     }
 }

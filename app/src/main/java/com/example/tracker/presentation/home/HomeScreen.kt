@@ -102,7 +102,6 @@ fun HomeScreen(
             totalAccountBalance = uiState.totalAccountBalance
         )
 
-        // LazyColumn dentro de un Box para el overlay de fade
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -140,7 +139,6 @@ fun HomeScreen(
                 }
             }
 
-            // Overlay gradiente: simula blur/fade de los items al acercarse al card
             val backgroundColor = MaterialTheme.colorScheme.background
             Box(
                 modifier = Modifier
