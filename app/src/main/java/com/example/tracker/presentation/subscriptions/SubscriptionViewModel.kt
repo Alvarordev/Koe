@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.tracker.data.model.Account
 import com.example.tracker.data.model.UserSubscription
 import com.example.tracker.domain.usecase.account.GetAccountsUseCase
+import com.example.tracker.domain.usecase.subscription.DeleteSubscriptionUseCase
 import com.example.tracker.domain.usecase.subscription.GetAllSubscriptionsUseCase
 import com.example.tracker.domain.usecase.subscription.GetSubscriptionServicesUseCase
 import com.example.tracker.domain.usecase.subscription.SaveSubscriptionUseCase
+import java.util.Locale
 import com.example.tracker.presentation.subscriptions.detail.SubscriptionDetailUiState
 import com.example.tracker.presentation.subscriptions.picker.SubscriptionPickerUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +22,9 @@ import kotlinx.coroutines.launch
 class SubscriptionViewModel(
     private val getAccounts: GetAccountsUseCase,
     private val getSubscriptionServices: GetSubscriptionServicesUseCase,
-    private val saveSubscription: SaveSubscriptionUseCase
+    private val saveSubscription: SaveSubscriptionUseCase,
+    private val getAllSubscriptions: GetAllSubscriptionsUseCase,
+    private val deleteSubscription: DeleteSubscriptionUseCase
 ) : ViewModel() {
 
     private val _pickerState = MutableStateFlow(SubscriptionPickerUiState())
@@ -63,6 +67,33 @@ class SubscriptionViewModel(
             viewModelScope.launch {
                 val service = getSubscriptionServices().first().find { it.iconResName == iconResName }
                 _detailState.update { it.copy(service = service) }
+            }
+        }
+    }
+
+    fun initDetailForEdit(subscriptionId: Long) {
+        viewModelScope.launch {
+            val item = getAllSubscriptions().first().find { it.subscription.id == subscriptionId } ?: return@launch
+            val sub = item.subscription
+            val amountDecimal = if (sub.amount % 100 == 0L) {
+                (sub.amount / 100).toString()
+            } else {
+                String.format(Locale.US, "%.2f", sub.amount / 100.0)
+            }
+            _detailState.update { current ->
+                SubscriptionDetailUiState(
+                    editingId = sub.id,
+                    editingCreatedAt = sub.createdAt,
+                    isCustom = sub.iconResName == null,
+                    iconResName = sub.iconResName,
+                    customName = sub.customName ?: item.service?.name ?: "",
+                    customEmoji = sub.customEmoji ?: "⭐",
+                    amountString = amountDecimal,
+                    billingDay = sub.billingDay,
+                    accounts = current.accounts,
+                    selectedAccount = current.accounts.find { it.id == sub.accountId } ?: current.selectedAccount,
+                    service = item.service
+                )
             }
         }
     }
@@ -117,6 +148,7 @@ class SubscriptionViewModel(
         }
 
         val subscription = UserSubscription(
+            id = state.editingId ?: 0L,
             serviceId = if (state.isCustom) null else state.service?.id,
             accountId = account.id,
             amount = amountCents,
@@ -124,7 +156,8 @@ class SubscriptionViewModel(
             currencyCode = account.currencyCode,
             customName = state.customName.ifBlank { null },
             customEmoji = if (state.isCustom) state.customEmoji else null,
-            iconResName = if (state.isCustom) null else state.iconResName
+            iconResName = if (state.isCustom) null else state.iconResName,
+            createdAt = state.editingCreatedAt ?: System.currentTimeMillis()
         )
 
         _detailState.update { it.copy(isSubmitting = true, submitError = null) }
@@ -134,6 +167,18 @@ class SubscriptionViewModel(
                 _detailState.update { it.copy(isSubmitting = false, submitSuccess = true) }
             } catch (e: Exception) {
                 _detailState.update { it.copy(isSubmitting = false, submitError = "Error al guardar") }
+            }
+        }
+    }
+
+    fun deleteCurrentSubscription() {
+        val id = _detailState.value.editingId ?: return
+        viewModelScope.launch {
+            try {
+                deleteSubscription(id)
+                _detailState.update { it.copy(deleteSuccess = true) }
+            } catch (e: Exception) {
+                _detailState.update { it.copy(submitError = "Error al eliminar") }
             }
         }
     }

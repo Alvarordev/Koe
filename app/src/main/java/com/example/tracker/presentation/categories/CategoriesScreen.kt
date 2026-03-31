@@ -1,5 +1,6 @@
 package com.example.tracker.presentation.categories
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -220,6 +221,16 @@ private fun SubscriptionsContent(
                     onClick = { onSubscriptionClick(subscriptionWithDetails.subscription.id) },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
+            }
+            item {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    TextButton(onClick = onAddSubscription) {
+                        Text(text = "Agregar suscripción")
+                    }
+                }
             }
         }
     }

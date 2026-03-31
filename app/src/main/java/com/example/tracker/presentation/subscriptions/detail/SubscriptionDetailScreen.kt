@@ -24,6 +24,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -64,6 +66,7 @@ fun SubscriptionDetailScreen(
     onCustomNameChange: (String) -> Unit,
     onEmojiChange: (String) -> Unit,
     onSubmit: () -> Unit,
+    onDelete: () -> Unit = {},
     onNavigateBack: () -> Unit
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues()
@@ -81,10 +84,10 @@ fun SubscriptionDetailScreen(
         uiState.selectedAccount != null &&
         uiState.customName.isNotBlank()
 
-    val screenTitle = if (uiState.isCustom) {
-        "Nueva suscripción"
-    } else {
-        uiState.service?.name ?: "Suscripción"
+    val screenTitle = when {
+        uiState.editingId != null -> "Editar suscripción"
+        uiState.isCustom -> "Nueva suscripción"
+        else -> uiState.service?.name ?: "Suscripción"
     }
 
     val iconSpec = uiState.iconResName?.let { SubscriptionIconCatalog.forName(it) }
@@ -127,20 +130,7 @@ fun SubscriptionDetailScreen(
                 modifier = Modifier.weight(1f)
             )
 
-            TextButton(
-                onClick = onSubmit,
-                enabled = isSaveEnabled && !uiState.isSubmitting
-            ) {
-                Text(
-                    text = "Guardar",
-                    color = if (isSaveEnabled && !uiState.isSubmitting)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+            Spacer(modifier = Modifier.width(64.dp))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -379,16 +369,42 @@ fun SubscriptionDetailScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.weight(1f))
 
         if (uiState.submitError != null) {
             Text(
                 text = uiState.submitError,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
             )
         }
+
+        Button(
+            onClick = onSubmit,
+            enabled = isSaveEnabled && !uiState.isSubmitting,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Text(text = "Guardar", fontWeight = FontWeight.SemiBold)
+        }
+
+        if (uiState.editingId != null) {
+            TextButton(
+                onClick = onDelete,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Eliminar suscripción",
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 
     if (showAccountSheet) {

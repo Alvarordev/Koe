@@ -16,5 +16,7 @@ data class SubscriptionDetailUiState(
     val isSubmitting: Boolean = false,
     val submitSuccess: Boolean = false,
     val submitError: String? = null,
-    val editingId: Long? = null
+    val editingId: Long? = null,
+    val editingCreatedAt: Long? = null,
+    val deleteSuccess: Boolean = false
 )

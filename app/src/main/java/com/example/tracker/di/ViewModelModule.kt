@@ -26,5 +26,5 @@ val viewModelModule = module {
     viewModel { SettingsViewModel(get(), get(), get(), androidContext()) }
     viewModel { YapeSetupViewModel(get(), get(), get()) }
     viewModel { TransferViewModel(get(), get(), get(), get()) }
-    viewModel { SubscriptionViewModel(get(), get(), get()) }
+    viewModel { SubscriptionViewModel(get(), get(), get(), get(), get()) }
 }

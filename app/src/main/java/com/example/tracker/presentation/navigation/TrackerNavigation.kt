@@ -90,7 +90,8 @@ private val bottomBarSuppressedRoutes = setOf(
     "add_transaction_category",
     "add_transaction_amount",
     "subscription_picker",
-    "subscription_detail/{iconResName}"
+    "subscription_detail/{iconResName}",
+    "subscription_detail_edit/{subscriptionId}"
 )
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -235,7 +236,7 @@ fun TrackerScaffold() {
                         },
                         onAddCategoryClick = { showAddCategorySheet = true },
                         onAddSubscription = { navController.navigate("subscription_picker") },
-                        onSubscriptionClick = { navController.navigate("subscription_picker") }
+                        onSubscriptionClick = { subId -> navController.navigate("subscription_detail_edit/$subId") }
                     )
                 }
                 composable(TrackerTab.Settings.route) {
@@ -419,6 +420,35 @@ fun TrackerScaffold() {
                         onCustomNameChange = subscriptionViewModel::onCustomNameChange,
                         onEmojiChange = subscriptionViewModel::onEmojiChange,
                         onSubmit = subscriptionViewModel::submit,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+                composable("subscription_detail_edit/{subscriptionId}") { backStackEntry ->
+                    val subscriptionId = backStackEntry.arguments?.getString("subscriptionId")?.toLongOrNull() ?: return@composable
+                    LaunchedEffect(subscriptionId) {
+                        subscriptionViewModel.initDetailForEdit(subscriptionId)
+                    }
+                    LaunchedEffect(detailState.submitSuccess) {
+                        if (detailState.submitSuccess) {
+                            navController.popBackStack(TrackerTab.Categories.route, inclusive = false)
+                            subscriptionViewModel.resetDetail()
+                        }
+                    }
+                    LaunchedEffect(detailState.deleteSuccess) {
+                        if (detailState.deleteSuccess) {
+                            navController.popBackStack(TrackerTab.Categories.route, inclusive = false)
+                            subscriptionViewModel.resetDetail()
+                        }
+                    }
+                    SubscriptionDetailScreen(
+                        uiState = detailState,
+                        onAmountChange = subscriptionViewModel::onAmountChange,
+                        onBillingDayChange = subscriptionViewModel::onBillingDayChange,
+                        onSelectAccount = subscriptionViewModel::onSelectAccount,
+                        onCustomNameChange = subscriptionViewModel::onCustomNameChange,
+                        onEmojiChange = subscriptionViewModel::onEmojiChange,
+                        onSubmit = subscriptionViewModel::submit,
+                        onDelete = subscriptionViewModel::deleteCurrentSubscription,
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
