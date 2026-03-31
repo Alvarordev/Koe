@@ -5,16 +5,12 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -27,8 +23,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -64,7 +58,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.graphics.toColorInt
 import com.example.tracker.data.enums.SupportedCurrency
 import com.example.tracker.data.model.Account
+import com.example.tracker.data.model.Category
+import com.example.tracker.presentation.addtransaction.components.CategoryPickerSheet
 import com.example.tracker.presentation.addtransaction.components.TransactionKeyboard
+import com.example.tracker.presentation.components.AccountPickerSheet
 import com.example.tracker.presentation.components.AnimatedAmountText
 import com.example.tracker.presentation.components.EmojiText
 import com.example.tracker.presentation.util.CurrencyFormatter
@@ -77,7 +74,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AmountEntryScreen(
     uiState: AddTransactionUiState,
@@ -85,17 +82,13 @@ fun AmountEntryScreen(
     onKeyPress: (KeyboardKey) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onSubmit: () -> Unit,
-    onClearCategory: () -> Unit,
+    onCategorySelected: (Category) -> Unit,
     onDateSelected: (Long) -> Unit,
     onLocationToggle: (Boolean, Double?, Double?) -> Unit,
     onNavigateBack: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues()
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues()
-
-    val category = uiState.selectedCategory
 
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
@@ -148,6 +141,8 @@ fun AmountEntryScreen(
     val timeZone = ZoneId.systemDefault()
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showCategorySheet by remember { mutableStateOf(false) }
+    var showAccountSheet by remember { mutableStateOf(false) }
     var pendingDateMillis by remember { mutableLongStateOf(uiState.selectedDate) }
 
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = uiState.selectedDate)
@@ -212,9 +207,9 @@ fun AmountEntryScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            AccountSelector(
+            AccountSelectorBox(
                 uiState = uiState,
-                onAccountSelected = onAccountSelected
+                onClick = { showAccountSheet = true }
             )
 
             Row(
@@ -256,24 +251,10 @@ fun AmountEntryScreen(
         }
 
         Column {
-            val category = uiState.selectedCategory
-            if (category != null) {
-                with(sharedTransitionScope) {
-                    CategoryCard(
-                        uiState = uiState,
-                        onClick = onClearCategory,
-                        modifier = Modifier.sharedElement(
-                            rememberSharedContentState(key = "category_${category.id}"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        )
-                    )
-                }
-            } else {
-                CategoryCard(
-                    uiState = uiState,
-                    onClick = onClearCategory
-                )
-            }
+            CategoryCard(
+                uiState = uiState,
+                onClick = { showCategorySheet = true }
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -313,6 +294,22 @@ fun AmountEntryScreen(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+    }
+
+    if (showCategorySheet) {
+        CategoryPickerSheet(
+            uiState = uiState,
+            onCategorySelected = onCategorySelected,
+            onDismiss = { showCategorySheet = false }
+        )
+    }
+
+    if (showAccountSheet) {
+        AccountPickerSheet(
+            accounts = uiState.accounts.filter { !it.isArchived },
+            onAccountSelected = onAccountSelected,
+            onDismiss = { showAccountSheet = false }
+        )
     }
 
     if (showDatePicker) {
@@ -386,16 +383,7 @@ private fun CategoryCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val category = uiState.selectedCategory ?: return
-
-    val categoryColor = try {
-        Color(category.color.toColorInt())
-    } catch (_: Exception) {
-        MaterialTheme.colorScheme.primary
-    }
-
-    val currencyCode = uiState.selectedAccount?.currencyCode ?: "USD"
-    val summary = uiState.categorySummary
+    val category = uiState.selectedCategory
 
     Box(
         modifier = modifier
@@ -410,58 +398,71 @@ private fun CategoryCard(
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(47.dp)
-                    .clip(CircleShape)
-                    .background(color = categoryColor),
-                contentAlignment = Alignment.Center
-            ) {
-                EmojiText(
-                    text = category.emoji,
-                    style = TextStyle(fontSize = 24.sp)
-                )
+        if (category == null) {
+            Text(
+                text = "Seleccionar categor\u00EDa",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            val categoryColor = try {
+                Color(category.color.toColorInt())
+            } catch (_: Exception) {
+                MaterialTheme.colorScheme.primary
             }
+            val currencyCode = uiState.selectedAccount?.currencyCode ?: "USD"
+            val summary = uiState.categorySummary
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(47.dp)
+                        .clip(CircleShape)
+                        .background(color = categoryColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EmojiText(
+                        text = category.emoji,
+                        style = TextStyle(fontSize = 24.sp)
+                    )
+                }
 
-            Column(modifier = Modifier.weight(1f)) {
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = category.name,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "${summary?.count ?: 0} ${if (summary?.count == 1) "Operaci\u00F3n" else "Operaciones"}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        lineHeight = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
                 Text(
-                    text = category.name,
-                    fontSize = 17.sp,
+                    text = CurrencyFormatter.formatBalance(summary?.total ?: 0L, currencyCode),
+                    fontSize = 19.sp,
                     fontWeight = FontWeight.SemiBold,
-                    lineHeight = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "${summary?.count ?: 0} ${if (summary?.count == 1) "Operaci\u00F3n" else "Operaciones"}",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    lineHeight = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
-            Text(
-                text = CurrencyFormatter.formatBalance(summary?.total ?: 0L, currencyCode),
-                fontSize = 19.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
 
 @Composable
-private fun AccountSelector(
+private fun AccountSelectorBox(
     uiState: AddTransactionUiState,
-    onAccountSelected: (Account) -> Unit
+    onClick: () -> Unit
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
-    val activeAccounts = uiState.accounts.filter { !it.isArchived }
     val selectedAccount = uiState.selectedAccount
     val accountColor = try {
         Color(selectedAccount!!.color.toColorInt())
@@ -469,44 +470,17 @@ private fun AccountSelector(
         MaterialTheme.colorScheme.primary
     }
 
-    if (!isExpanded) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .clip(RoundedCornerShape(13.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(13.dp))
-                .clickable { isExpanded = true }
-                .padding(horizontal = 16.dp, vertical = 9.dp)
-        ) {
-            AccountInfoContent(selectedAccount, accountColor)
-        }
-    } else {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.4f))
-                .clickable { isExpanded = false },
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(350.dp)
-                    .height(400.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .clickable(enabled = false) { }
-            ) {
-                AccountListDetailed(
-                    activeAccounts = activeAccounts,
-                    onAccountSelected = {
-                        onAccountSelected(it)
-                        isExpanded = false
-                    }
-                )
-            }
-        }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(13.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(13.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 9.dp)
+    ) {
+        AccountInfoContent(selectedAccount, accountColor)
     }
 }
 
@@ -539,90 +513,6 @@ private fun AccountInfoContent(account: Account?, color: Color) {
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-    }
-}
-
-@Composable
-private fun AccountListDetailed(
-    activeAccounts: List<Account>,
-    onAccountSelected: (Account) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 8.dp)
-    ) {
-        Text(
-            text = "Select Account",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(bottom = 16.dp)
-        ) {
-            items(activeAccounts) { account ->
-                val color = try {
-                    Color(account.color.toColorInt())
-                } catch (_: Exception) {
-                    MaterialTheme.colorScheme.primary
-                }
-
-                AccountItemRow(
-                    account = account,
-                    accountColor = color,
-                    onClick = { onAccountSelected(account) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun AccountItemRow(
-    account: Account,
-    accountColor: Color,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .height(56.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(width = 32.dp, height = 20.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(accountColor)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = account.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            Text(
-                text = CurrencyFormatter.formatBalance(account.currentBalance, account.currencyCode),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
     }
 }
 

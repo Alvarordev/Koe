@@ -1,6 +1,7 @@
 package com.example.tracker.presentation.navigation
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.CubicBezierEasing
@@ -9,6 +10,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -47,7 +52,6 @@ import com.example.tracker.presentation.accounts.accountdetail.AccountDetailScre
 import com.example.tracker.presentation.accounts.addaccount.AddAccountScreen
 import com.example.tracker.presentation.addtransaction.AddTransactionViewModel
 import com.example.tracker.presentation.addtransaction.AmountEntryScreen
-import com.example.tracker.presentation.addtransaction.CategoryPickerScreen
 import com.example.tracker.presentation.categories.CategoriesScreen
 import com.example.tracker.presentation.categories.CategoriesViewModel
 import com.example.tracker.presentation.categories.addcategory.AddEditCategorySheet
@@ -87,7 +91,6 @@ private val bottomBarSuppressedRoutes = setOf(
     "yape_status",
     "transfer_source",
     "transfer_amount",
-    "add_transaction_category",
     "add_transaction_amount",
     "subscription_picker",
     "subscription_detail/{iconResName}",
@@ -116,6 +119,11 @@ fun TrackerScaffold() {
     val detailState by subscriptionViewModel.detailState.collectAsState()
     var showAddCategorySheet by remember { mutableStateOf(false) }
     var editCategoryId by remember { mutableStateOf<Long?>(null) }
+    var fabMenuExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(currentRoute) {
+        fabMenuExpanded = false
+    }
 
     val showBottomBar = currentRoute !in bottomBarSuppressedRoutes
     val currentTabRoute = TrackerTab.entries.firstOrNull { tab ->
@@ -142,13 +150,13 @@ fun TrackerScaffold() {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             floatingActionButton = {
-                if (showBottomBar) {
-                    if (currentTabRoute == TrackerTab.Home.route) {
-                        FabMenu(
-                            navController = navController,
-                            onTransactionPress = { navController.navigate("add_transaction_category") }
-                        )
-                    }
+                if (showBottomBar && currentTabRoute == TrackerTab.Home.route) {
+                    FabMenu(
+                        expanded = fabMenuExpanded,
+                        onExpandedChange = { fabMenuExpanded = it },
+                        navController = navController,
+                        onTransactionPress = { navController.navigate("add_transaction_amount") }
+                    )
                 }
             },
             bottomBar = {
@@ -207,15 +215,40 @@ fun TrackerScaffold() {
                 }
             }
         ) { innerPadding ->
+
+            Box(modifier = Modifier.fillMaxSize()) {
+
+
+
             NavHost(
                 navController = navController,
                 startDestination = TrackerTab.Home.route,
                 modifier = Modifier.fillMaxSize(),
-                enterTransition = { fadeIn(animationSpec = tween(300, easing = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f))) },
-                exitTransition = { fadeOut(animationSpec = tween(200, easing = CubicBezierEasing(0.4f, 0.0f, 1.0f, 1.0f))) },
+                enterTransition = {
+                    fadeIn(
+                        animationSpec = tween(
+                            300,
+                            easing = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)
+                        )
+                    )
+                },
+                exitTransition = {
+                    fadeOut(
+                        animationSpec = tween(
+                            200,
+                            easing = CubicBezierEasing(0.4f, 0.0f, 1.0f, 1.0f)
+                        )
+                    )
+                },
             ) {
                 composable(TrackerTab.Home.route) {
-                    HomeScreen(contentPadding = innerPadding)
+                    HomeScreen(
+                        contentPadding = innerPadding,
+                        onEditTransaction = { transactionId ->
+                            addViewModel.loadTransactionById(transactionId)
+                            navController.navigate("add_transaction_amount")
+                        }
+                    )
                 }
                 composable(TrackerTab.Accounts.route) {
                     AccountsScreen(
@@ -322,22 +355,6 @@ fun TrackerScaffold() {
                         contentPadding = innerPadding
                     )
                 }
-                composable("add_transaction_category") {
-                    CategoryPickerScreen(
-                        uiState = addUiState,
-                        onCategorySelected = { category ->
-                            addViewModel.selectCategory(category)
-                            navController.navigate("add_transaction_amount")
-                        },
-                        onNavigateBack = {
-                            addViewModel.reset()
-                            navController.popBackStack()
-                        },
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedVisibilityScope = this@composable
-
-                    )
-                }
                 composable("add_transaction_amount") {
                     AmountEntryScreen(
                         uiState = addUiState,
@@ -345,24 +362,20 @@ fun TrackerScaffold() {
                         onKeyPress = addViewModel::onKeyPress,
                         onDescriptionChange = addViewModel::onDescriptionChange,
                         onSubmit = addViewModel::submit,
-                        onClearCategory = {
-                            addViewModel.clearCategory()
-                            navController.popBackStack()
-                        },
+                        onCategorySelected = addViewModel::selectCategory,
                         onDateSelected = addViewModel::onDateSelected,
                         onLocationToggle = addViewModel::onLocationToggle,
                         onNavigateBack = {
-                            addViewModel.clearCategory()
+                            addViewModel.reset()
                             navController.popBackStack()
-                        },
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedVisibilityScope = this@composable
+                        }
                     )
                 }
-                composable("subscription_picker",
+                composable(
+                    "subscription_picker",
                     enterTransition = {
                         slideInVertically(
-                            initialOffsetY = { it/2 }, // 👈 desde abajo
+                            initialOffsetY = { it / 2 }, // 👈 desde abajo
                             animationSpec = tween(
                                 durationMillis = 300,
                                 easing = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)
@@ -371,7 +384,7 @@ fun TrackerScaffold() {
                     },
                     exitTransition = {
                         slideOutVertically(
-                            targetOffsetY = { it/2 }, // 👈 hacia abajo
+                            targetOffsetY = { it / 2 }, // 👈 hacia abajo
                             animationSpec = tween(250)
                         ) + fadeOut()
                     },
@@ -387,7 +400,7 @@ fun TrackerScaffold() {
                             animationSpec = tween(250)
                         ) + fadeOut()
                     }
-                    ) {
+                ) {
                     SubscriptionPickerScreen(
                         uiState = pickerState,
                         onQueryChange = subscriptionViewModel::onQueryChange,
@@ -408,7 +421,10 @@ fun TrackerScaffold() {
                     }
                     LaunchedEffect(detailState.submitSuccess) {
                         if (detailState.submitSuccess) {
-                            navController.popBackStack(TrackerTab.Categories.route, inclusive = false)
+                            navController.popBackStack(
+                                TrackerTab.Categories.route,
+                                inclusive = false
+                            )
                             subscriptionViewModel.resetDetail()
                         }
                     }
@@ -424,19 +440,27 @@ fun TrackerScaffold() {
                     )
                 }
                 composable("subscription_detail_edit/{subscriptionId}") { backStackEntry ->
-                    val subscriptionId = backStackEntry.arguments?.getString("subscriptionId")?.toLongOrNull() ?: return@composable
+                    val subscriptionId =
+                        backStackEntry.arguments?.getString("subscriptionId")?.toLongOrNull()
+                            ?: return@composable
                     LaunchedEffect(subscriptionId) {
                         subscriptionViewModel.initDetailForEdit(subscriptionId)
                     }
                     LaunchedEffect(detailState.submitSuccess) {
                         if (detailState.submitSuccess) {
-                            navController.popBackStack(TrackerTab.Categories.route, inclusive = false)
+                            navController.popBackStack(
+                                TrackerTab.Categories.route,
+                                inclusive = false
+                            )
                             subscriptionViewModel.resetDetail()
                         }
                     }
                     LaunchedEffect(detailState.deleteSuccess) {
                         if (detailState.deleteSuccess) {
-                            navController.popBackStack(TrackerTab.Categories.route, inclusive = false)
+                            navController.popBackStack(
+                                TrackerTab.Categories.route,
+                                inclusive = false
+                            )
                             subscriptionViewModel.resetDetail()
                         }
                     }
@@ -453,7 +477,25 @@ fun TrackerScaffold() {
                     )
                 }
             }
+            AnimatedVisibility(
+                visible = fabMenuExpanded,
+                enter = fadeIn(tween(200)),
+                exit = fadeOut(tween(200))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { fabMenuExpanded = false }
+                )
+            }
+            }
         }
+
+
 
         if (showAddCategorySheet || editCategoryId != null) {
             AddEditCategorySheet(
