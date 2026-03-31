@@ -28,7 +28,11 @@ import com.example.tracker.domain.usecase.transaction.GetAllCategorySummariesUse
 import com.example.tracker.domain.usecase.transaction.GetExpensesByCategoryUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsByAccountUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsByDateRangeUseCase
+import com.example.tracker.domain.usecase.subscription.DeleteSubscriptionUseCase
+import com.example.tracker.domain.usecase.subscription.GetActiveSubscriptionsUseCase
+import com.example.tracker.domain.usecase.subscription.GetAllSubscriptionsUseCase
 import com.example.tracker.domain.usecase.subscription.GetSubscriptionServicesUseCase
+import com.example.tracker.domain.usecase.subscription.SaveSubscriptionUseCase
 import com.example.tracker.domain.usecase.transaction.GetTotalByTypeInPeriodUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsUseCase
 import com.example.tracker.domain.usecase.database.ResetDatabaseUseCase
@@ -66,6 +70,10 @@ val useCaseModule = module {
 
     // Subscription
     factory { GetSubscriptionServicesUseCase(get()) }
+    factory { GetAllSubscriptionsUseCase(get()) }
+    factory { GetActiveSubscriptionsUseCase(get()) }
+    factory { SaveSubscriptionUseCase(get()) }
+    factory { DeleteSubscriptionUseCase(get()) }
 
     // Budget
     factory { GetBudgetsUseCase(get()) }

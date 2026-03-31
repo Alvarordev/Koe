@@ -9,6 +9,7 @@ import com.example.tracker.presentation.categories.addcategory.AddEditCategoryVi
 import com.example.tracker.presentation.home.HomeViewModel
 import com.example.tracker.presentation.settings.SettingsViewModel
 import com.example.tracker.presentation.settings.yapesetup.YapeSetupViewModel
+import com.example.tracker.presentation.subscriptions.SubscriptionViewModel
 import com.example.tracker.presentation.transfer.TransferViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
@@ -25,4 +26,5 @@ val viewModelModule = module {
     viewModel { SettingsViewModel(get(), get(), get(), androidContext()) }
     viewModel { YapeSetupViewModel(get(), get(), get()) }
     viewModel { TransferViewModel(get(), get(), get(), get()) }
+    viewModel { SubscriptionViewModel(get(), get(), get()) }
 }

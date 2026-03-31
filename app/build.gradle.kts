@@ -32,14 +32,20 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         compose = true
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        freeCompilerArgs.add("-java-parameters")
+    }
+}
 
 
 dependencies {
@@ -91,6 +97,19 @@ dependencies {
 
     // Coroutines Play Services (for .await() on ML Kit Tasks)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+
+    // adds all APIs (recommended for bootstrapping new projects)
+    implementation("com.composables:composeunstyled:1.49.6")
+
+    // adds theming APIs
+    implementation("com.composables:composeunstyled-theming:1.49.6")
+
+    // adds component primitives for building components
+    implementation("com.composables:composeunstyled-primitives:1.49.6")
+
+    // adds themes for native look and feel
+    implementation("com.composables:composeunstyled-platformtheme:1.49.6")
+
 }
 
 ksp {

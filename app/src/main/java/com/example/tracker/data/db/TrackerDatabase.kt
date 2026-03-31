@@ -17,6 +17,7 @@ import com.example.tracker.data.db.dao.RecurringRuleDao
 import com.example.tracker.data.db.dao.SubscriptionServiceDao
 import com.example.tracker.data.db.dao.ProcessedNotificationDao
 import com.example.tracker.data.db.dao.TransactionDao
+import com.example.tracker.data.db.dao.UserSubscriptionDao
 import com.example.tracker.data.model.Account
 import com.example.tracker.data.model.Budget
 import com.example.tracker.data.model.CasualLoan
@@ -29,6 +30,7 @@ import com.example.tracker.data.model.RecurringRule
 import com.example.tracker.data.model.SubscriptionService
 import com.example.tracker.data.model.ProcessedNotification
 import com.example.tracker.data.model.Transaction
+import com.example.tracker.data.model.UserSubscription
 
 @Database(
     entities = [
@@ -43,9 +45,10 @@ import com.example.tracker.data.model.Transaction
         CasualLoanTransaction::class,
         FormalLoan::class,
         FormalLoanPayment::class,
-        ProcessedNotification::class
+        ProcessedNotification::class,
+        UserSubscription::class
     ],
-    version = 4,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -94,6 +97,35 @@ abstract class TrackerDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_processed_notifications_operationNumber` ON `processed_notifications` (`operationNumber`)")
             }
         }
+
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE user_subscriptions ADD COLUMN iconResName TEXT")
+            }
+        }
+
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `user_subscriptions` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `serviceId` INTEGER,
+                        `accountId` INTEGER NOT NULL,
+                        `amount` INTEGER NOT NULL,
+                        `billingDay` INTEGER NOT NULL,
+                        `currencyCode` TEXT NOT NULL,
+                        `customName` TEXT,
+                        `customEmoji` TEXT,
+                        `isArchived` INTEGER NOT NULL DEFAULT 0,
+                        `createdAt` INTEGER NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON DELETE RESTRICT
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_user_subscriptions_serviceId` ON `user_subscriptions` (`serviceId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_user_subscriptions_accountId` ON `user_subscriptions` (`accountId`)")
+            }
+        }
     }
     abstract fun accountDao(): AccountDao
     abstract fun categoryDao(): CategoryDao
@@ -107,4 +139,5 @@ abstract class TrackerDatabase : RoomDatabase() {
     abstract fun formalLoanDao(): FormalLoanDao
     abstract fun formalLoanPaymentDao(): FormalLoanPaymentDao
     abstract fun processedNotificationDao(): ProcessedNotificationDao
+    abstract fun userSubscriptionDao(): UserSubscriptionDao
 }
