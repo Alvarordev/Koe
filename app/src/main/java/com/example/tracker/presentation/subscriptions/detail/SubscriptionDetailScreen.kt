@@ -24,10 +24,12 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import java.time.LocalDate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -65,6 +67,7 @@ fun SubscriptionDetailScreen(
     onSelectAccount: (Account) -> Unit,
     onCustomNameChange: (String) -> Unit,
     onEmojiChange: (String) -> Unit,
+    onBillCurrentMonthChange: (Boolean) -> Unit,
     onSubmit: () -> Unit,
     onDelete: () -> Unit = {},
     onNavigateBack: () -> Unit
@@ -367,6 +370,37 @@ fun SubscriptionDetailScreen(
                     }
                 }
             )
+        }
+
+        val today = LocalDate.now()
+        val billingDayPassedThisMonth = uiState.billingDay in 1..today.dayOfMonth
+        val showBillCurrentMonthToggle = uiState.editingId == null && billingDayPassedThisMonth
+
+        if (showBillCurrentMonthToggle) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(13.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Cobrar este mes también",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(
+                    checked = uiState.billCurrentMonth,
+                    onCheckedChange = onBillCurrentMonthChange
+                )
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))

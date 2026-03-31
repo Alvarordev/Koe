@@ -498,6 +498,7 @@ fun TrackerScaffold() {
                         onSelectAccount = subscriptionViewModel::onSelectAccount,
                         onCustomNameChange = subscriptionViewModel::onCustomNameChange,
                         onEmojiChange = subscriptionViewModel::onEmojiChange,
+                        onBillCurrentMonthChange = subscriptionViewModel::onBillCurrentMonthChange,
                         onSubmit = subscriptionViewModel::submit,
                         onNavigateBack = { navController.popBackStack() }
                     )
@@ -534,6 +535,7 @@ fun TrackerScaffold() {
                         onSelectAccount = subscriptionViewModel::onSelectAccount,
                         onCustomNameChange = subscriptionViewModel::onCustomNameChange,
                         onEmojiChange = subscriptionViewModel::onEmojiChange,
+                        onBillCurrentMonthChange = subscriptionViewModel::onBillCurrentMonthChange,
                         onSubmit = subscriptionViewModel::submit,
                         onDelete = subscriptionViewModel::deleteCurrentSubscription,
                         onNavigateBack = { navController.popBackStack() }

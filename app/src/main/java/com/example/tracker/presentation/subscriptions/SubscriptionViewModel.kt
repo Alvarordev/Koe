@@ -128,6 +128,10 @@ class SubscriptionViewModel(
         _detailState.update { it.copy(customEmoji = emoji) }
     }
 
+    fun onBillCurrentMonthChange(value: Boolean) {
+        _detailState.update { it.copy(billCurrentMonth = value) }
+    }
+
     fun submit() {
         val state = _detailState.value
         if (state.isSubmitting) return
@@ -162,11 +166,12 @@ class SubscriptionViewModel(
             createdAt = state.editingCreatedAt ?: System.currentTimeMillis()
         )
 
+        val billCurrentMonth = state.billCurrentMonth
         _detailState.update { it.copy(isSubmitting = true, submitError = null) }
         viewModelScope.launch {
             try {
                 val savedId = saveSubscription(subscription)
-                processBilling(savedId)
+                processBilling(savedId, billCurrentMonth)
                 _detailState.update { it.copy(isSubmitting = false, submitSuccess = true) }
             } catch (e: Exception) {
                 _detailState.update { it.copy(isSubmitting = false, submitError = "Error al guardar") }

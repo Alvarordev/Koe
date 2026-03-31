@@ -1,6 +1,5 @@
 package com.example.tracker.presentation.home.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +22,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -58,7 +56,6 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberMarkerState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
 import java.time.Instant
 import java.time.ZoneId
@@ -91,12 +88,6 @@ fun TransactionDetailSheet(
         Color(category.color.toColorInt())
     } catch (_: Exception) {
         MaterialTheme.colorScheme.primary
-    }
-
-    val accountColor = try {
-        Color(account.color.toColorInt())
-    } catch (_: Exception) {
-        MaterialTheme.colorScheme.primaryContainer
     }
 
     val amountColor = when (txn.type) {

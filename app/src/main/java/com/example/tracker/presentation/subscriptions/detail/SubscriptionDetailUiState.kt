@@ -13,6 +13,7 @@ data class SubscriptionDetailUiState(
     val selectedAccount: Account? = null,
     val accounts: List<Account> = emptyList(),
     val isCustom: Boolean = false,
+    val billCurrentMonth: Boolean = false,
     val isSubmitting: Boolean = false,
     val submitSuccess: Boolean = false,
     val submitError: String? = null,

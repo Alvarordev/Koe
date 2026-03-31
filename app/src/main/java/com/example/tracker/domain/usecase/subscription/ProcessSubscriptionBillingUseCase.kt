@@ -17,7 +17,7 @@ class ProcessSubscriptionBillingUseCase(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository
 ) {
-    suspend operator fun invoke(subscriptionId: Long? = null) {
+    suspend operator fun invoke(subscriptionId: Long? = null, billCurrentMonth: Boolean = false) {
         val subscriptions = subscriptionRepository.getActive().first()
         val toProcess = if (subscriptionId != null) {
             subscriptions.filter { it.subscription.id == subscriptionId }
@@ -32,14 +32,15 @@ class ProcessSubscriptionBillingUseCase(
 
         for (item in toProcess) {
             if (item.account == null) continue
-            processSubscription(item, category.id, today)
+            processSubscription(item, category.id, today, billCurrentMonth)
         }
     }
 
     private suspend fun processSubscription(
         item: SubscriptionWithDetails,
         categoryId: Long,
-        today: LocalDate
+        today: LocalDate,
+        billCurrentMonth: Boolean = false
     ) {
         val sub = item.subscription
         val zone = ZoneId.systemDefault()
@@ -48,8 +49,13 @@ class ProcessSubscriptionBillingUseCase(
         val lastTransaction = transactionRepository.getLastBySubscriptionId(sub.id)
 
         val startYearMonth: YearMonth = if (lastTransaction == null) {
-            val creationDate = Instant.ofEpochMilli(sub.createdAt).atZone(zone).toLocalDate()
-            YearMonth.from(creationDate)
+            val todayYearMonth = YearMonth.from(today)
+            val billingDayPassedThisMonth = sub.billingDay <= today.dayOfMonth
+            if (billingDayPassedThisMonth && !billCurrentMonth) {
+                todayYearMonth.plusMonths(1)
+            } else {
+                todayYearMonth
+            }
         } else {
             val lastDate = Instant.ofEpochMilli(lastTransaction.date).atZone(zone).toLocalDate()
             YearMonth.from(lastDate).plusMonths(1)
