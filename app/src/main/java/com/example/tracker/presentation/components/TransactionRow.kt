@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,6 +31,7 @@ import com.example.tracker.data.model.relations.TransactionWithDetails
 import com.example.tracker.ui.theme.ExpenseRed
 import com.example.tracker.ui.theme.IncomeGreen
 import com.example.tracker.presentation.util.CurrencyFormatter
+import com.example.tracker.presentation.subscriptions.SubscriptionIconCatalog
 import androidx.core.graphics.toColorInt
 
 @Composable
@@ -40,6 +43,7 @@ fun TransactionRow(
     val category = transaction.category
     val account = transaction.account
     val txn = transaction.transaction
+    val subscription = transaction.subscription
 
     val categoryColor = try {
         Color(category.color.toColorInt())
@@ -52,6 +56,10 @@ fun TransactionRow(
         TransactionType.INCOME -> IncomeGreen
         else -> MaterialTheme.colorScheme.onSurface
     }
+
+    val iconSpec = subscription?.iconResName?.let { SubscriptionIconCatalog.forName(it) }
+    val hasSubscriptionIcon = iconSpec != null || subscription?.customEmoji != null
+    val iconBackground = if (hasSubscriptionIcon) MaterialTheme.colorScheme.surfaceVariant else categoryColor
 
     val rowModifier = modifier
         .fillMaxWidth()
@@ -66,10 +74,22 @@ fun TransactionRow(
             modifier = Modifier
                 .size(46.dp)
                 .clip(CircleShape)
-                .background(categoryColor),
+                .background(iconBackground),
             contentAlignment = Alignment.Center
         ) {
-            EmojiText(text = category.emoji, style = TextStyle(fontSize = 20.sp))
+            when {
+                iconSpec != null -> Icon(
+                    painter = painterResource(id = iconSpec.iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(iconSpec.size),
+                    tint = iconSpec.tint ?: Color.Unspecified
+                )
+                subscription?.customEmoji != null -> EmojiText(
+                    text = subscription.customEmoji,
+                    style = TextStyle(fontSize = 20.sp)
+                )
+                else -> EmojiText(text = category.emoji, style = TextStyle(fontSize = 20.sp))
+            }
         }
 
         Spacer(modifier = Modifier.width(12.dp))

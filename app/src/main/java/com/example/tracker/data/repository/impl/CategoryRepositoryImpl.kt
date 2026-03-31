@@ -5,8 +5,12 @@ import com.example.tracker.data.enums.CategoryType
 import com.example.tracker.data.model.Category
 import com.example.tracker.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class CategoryRepositoryImpl(private val dao: CategoryDao) : CategoryRepository {
+
+    private val subscriptionCategoryMutex = Mutex()
 
     override fun getAll(): Flow<List<Category>> = dao.getAll()
 
@@ -28,4 +32,22 @@ class CategoryRepositoryImpl(private val dao: CategoryDao) : CategoryRepository 
     }
 
     override suspend fun getTransferCategory(): Category? = dao.getTransferCategory()
+
+    override suspend fun getOrCreateSubscriptionCategory(): Category {
+        return subscriptionCategoryMutex.withLock {
+            dao.getSubscriptionCategory() ?: run {
+                val template = Category(
+                    name = "Suscripciones",
+                    emoji = "\uD83D\uDCC5",
+                    color = "#6366F1",
+                    type = CategoryType.EXPENSE,
+                    isSystem = true,
+                    isArchived = true,
+                    sortOrder = 998
+                )
+                val id = dao.insert(template)
+                template.copy(id = id)
+            }
+        }
+    }
 }

@@ -8,6 +8,7 @@ import com.example.tracker.domain.usecase.account.GetAccountsUseCase
 import com.example.tracker.domain.usecase.subscription.DeleteSubscriptionUseCase
 import com.example.tracker.domain.usecase.subscription.GetAllSubscriptionsUseCase
 import com.example.tracker.domain.usecase.subscription.GetSubscriptionServicesUseCase
+import com.example.tracker.domain.usecase.subscription.ProcessSubscriptionBillingUseCase
 import com.example.tracker.domain.usecase.subscription.SaveSubscriptionUseCase
 import java.util.Locale
 import com.example.tracker.presentation.subscriptions.detail.SubscriptionDetailUiState
@@ -24,7 +25,8 @@ class SubscriptionViewModel(
     private val getSubscriptionServices: GetSubscriptionServicesUseCase,
     private val saveSubscription: SaveSubscriptionUseCase,
     private val getAllSubscriptions: GetAllSubscriptionsUseCase,
-    private val deleteSubscription: DeleteSubscriptionUseCase
+    private val deleteSubscription: DeleteSubscriptionUseCase,
+    private val processBilling: ProcessSubscriptionBillingUseCase
 ) : ViewModel() {
 
     private val _pickerState = MutableStateFlow(SubscriptionPickerUiState())
@@ -163,7 +165,8 @@ class SubscriptionViewModel(
         _detailState.update { it.copy(isSubmitting = true, submitError = null) }
         viewModelScope.launch {
             try {
-                saveSubscription(subscription)
+                val savedId = saveSubscription(subscription)
+                processBilling(savedId)
                 _detailState.update { it.copy(isSubmitting = false, submitSuccess = true) }
             } catch (e: Exception) {
                 _detailState.update { it.copy(isSubmitting = false, submitError = "Error al guardar") }

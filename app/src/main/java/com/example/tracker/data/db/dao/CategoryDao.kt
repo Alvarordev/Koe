@@ -38,4 +38,7 @@ interface CategoryDao {
 
     @Query("SELECT * FROM categories WHERE name = 'Transfer' AND isSystem = 1 LIMIT 1")
     suspend fun getTransferCategory(): Category?
+
+    @Query("SELECT * FROM categories WHERE name = 'Suscripciones' AND isSystem = 1 LIMIT 1")
+    suspend fun getSubscriptionCategory(): Category?
 }

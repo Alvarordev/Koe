@@ -70,6 +70,12 @@ interface TransactionDao {
     @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type = :type AND date BETWEEN :start AND :end")
     fun getTotalByTypeInPeriod(type: TransactionType, start: Long, end: Long): Flow<Long>
 
+    @Query("SELECT * FROM transactions WHERE subscriptionId = :subscriptionId ORDER BY date DESC LIMIT 1")
+    suspend fun getLastBySubscriptionId(subscriptionId: Long): Transaction?
+
+    @Query("DELETE FROM transactions WHERE subscriptionId = :subscriptionId AND date > :afterDate")
+    suspend fun deleteFutureBySubscriptionId(subscriptionId: Long, afterDate: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(transaction: Transaction): Long
 

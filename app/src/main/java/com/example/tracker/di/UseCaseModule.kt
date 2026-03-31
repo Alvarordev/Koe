@@ -32,10 +32,14 @@ import com.example.tracker.domain.usecase.subscription.DeleteSubscriptionUseCase
 import com.example.tracker.domain.usecase.subscription.GetActiveSubscriptionsUseCase
 import com.example.tracker.domain.usecase.subscription.GetAllSubscriptionsUseCase
 import com.example.tracker.domain.usecase.subscription.GetSubscriptionServicesUseCase
+import com.example.tracker.domain.usecase.subscription.ProcessSubscriptionBillingUseCase
 import com.example.tracker.domain.usecase.subscription.SaveSubscriptionUseCase
 import com.example.tracker.domain.usecase.transaction.GetTotalByTypeInPeriodUseCase
 import com.example.tracker.domain.usecase.transaction.GetTransactionsUseCase
 import com.example.tracker.domain.usecase.database.ResetDatabaseUseCase
+import com.example.tracker.domain.usecase.loan.SaveCasualLoanUseCase
+import com.example.tracker.domain.usecase.loan.SaveFormalLoanUseCase
+import com.example.tracker.domain.usecase.person.SavePersonUseCase
 import com.example.tracker.domain.usecase.yape.ProcessYapeShareImageUseCase
 import org.koin.dsl.module
 
@@ -74,6 +78,7 @@ val useCaseModule = module {
     factory { GetActiveSubscriptionsUseCase(get()) }
     factory { SaveSubscriptionUseCase(get()) }
     factory { DeleteSubscriptionUseCase(get()) }
+    factory { ProcessSubscriptionBillingUseCase(get(), get(), get()) }
 
     // Budget
     factory { GetBudgetsUseCase(get()) }
@@ -87,9 +92,12 @@ val useCaseModule = module {
     // Loans
     factory { GetFormalLoansUseCase(get()) }
     factory { GetCasualLoansUseCase(get()) }
+    factory { SaveCasualLoanUseCase(get()) }
+    factory { SaveFormalLoanUseCase(get()) }
 
     // Person
     factory { GetPersonsUseCase(get()) }
+    factory { SavePersonUseCase(get()) }
 
     // Yape
     factory { ProcessYapeShareImageUseCase(get(), get()) }

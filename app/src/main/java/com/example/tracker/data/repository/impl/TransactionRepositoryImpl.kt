@@ -96,4 +96,10 @@ class TransactionRepositoryImpl(
     override suspend fun update(transaction: Transaction) = transactionDao.update(transaction)
 
     override suspend fun delete(transaction: Transaction) = transactionDao.delete(transaction)
+
+    override suspend fun getLastBySubscriptionId(subscriptionId: Long): Transaction? =
+        transactionDao.getLastBySubscriptionId(subscriptionId)
+
+    override suspend fun deleteFutureBySubscriptionId(subscriptionId: Long, afterDate: Long) =
+        transactionDao.deleteFutureBySubscriptionId(subscriptionId, afterDate)
 }

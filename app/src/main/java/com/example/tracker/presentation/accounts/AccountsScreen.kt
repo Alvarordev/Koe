@@ -25,12 +25,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tracker.presentation.accounts.components.AccountsCarousel
+import com.example.tracker.presentation.accounts.components.LoansRow
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AccountsScreen(
     onAccountClick: (Long) -> Unit,
     onAddAccountClick: () -> Unit = {},
+    onAddLoanClick: () -> Unit = {},
+    onCasualLoanClick: (Long) -> Unit = {},
+    onFormalLoanClick: (Long) -> Unit = {},
     viewModel: AccountsViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -67,6 +71,16 @@ fun AccountsScreen(
         AccountsCarousel(
             accounts = uiState.accounts,
             onAccountClick = onAccountClick,
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        LoansRow(
+            casualLoanSummaries = uiState.casualLoanSummaries,
+            formalLoans = uiState.formalLoans,
+            onAddLoanClick = onAddLoanClick,
+            onCasualLoanClick = onCasualLoanClick,
+            onFormalLoanClick = onFormalLoanClick
         )
     }
 }

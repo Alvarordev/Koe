@@ -57,7 +57,13 @@ import com.example.tracker.presentation.categories.CategoriesViewModel
 import com.example.tracker.presentation.categories.addcategory.AddEditCategorySheet
 import com.example.tracker.presentation.components.FabMenu
 import com.example.tracker.presentation.home.HomeScreen
+import com.example.tracker.presentation.loans.AddLoanScreen
+import com.example.tracker.presentation.loans.AddLoanViewModel
 import com.example.tracker.presentation.settings.SettingsScreen
+import com.example.tracker.presentation.loans.detail.CasualLoanDetailScreen
+import com.example.tracker.presentation.loans.detail.CasualLoanDetailViewModel
+import com.example.tracker.presentation.loans.detail.FormalLoanDetailScreen
+import com.example.tracker.presentation.loans.detail.FormalLoanDetailViewModel
 import com.example.tracker.presentation.settings.yapesetup.screens.YapeSetupAccountScreen
 import com.example.tracker.presentation.settings.yapesetup.screens.YapeSetupIntroScreen
 import com.example.tracker.presentation.settings.yapesetup.screens.YapeSetupPermissionScreen
@@ -65,10 +71,12 @@ import com.example.tracker.presentation.settings.yapesetup.screens.YapeStatusScr
 import com.example.tracker.presentation.subscriptions.SubscriptionViewModel
 import com.example.tracker.presentation.subscriptions.detail.SubscriptionDetailScreen
 import com.example.tracker.presentation.subscriptions.picker.SubscriptionPickerScreen
+import com.example.tracker.domain.usecase.subscription.ProcessSubscriptionBillingUseCase
 import com.example.tracker.presentation.transfer.TransferAmountScreen
 import com.example.tracker.presentation.transfer.TransferSourceScreen
 import com.example.tracker.presentation.transfer.TransferViewModel
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 enum class TrackerTab(
     val route: String,
@@ -117,6 +125,7 @@ fun TrackerScaffold() {
     val subscriptionViewModel: SubscriptionViewModel = koinViewModel()
     val pickerState by subscriptionViewModel.pickerState.collectAsState()
     val detailState by subscriptionViewModel.detailState.collectAsState()
+    val processSubscriptionBilling: ProcessSubscriptionBillingUseCase = koinInject()
     var showAddCategorySheet by remember { mutableStateOf(false) }
     var editCategoryId by remember { mutableStateOf<Long?>(null) }
     var fabMenuExpanded by remember { mutableStateOf(false) }
@@ -129,6 +138,10 @@ fun TrackerScaffold() {
     val currentTabRoute = TrackerTab.entries.firstOrNull { tab ->
         currentDestination?.hierarchy?.any { it.route == tab.route } == true
     }?.route ?: TrackerTab.Home.route
+
+    LaunchedEffect(Unit) {
+        processSubscriptionBilling()
+    }
 
     LaunchedEffect(addUiState.submitSuccess) {
         if (addUiState.submitSuccess) {
@@ -255,7 +268,14 @@ fun TrackerScaffold() {
                         onAccountClick = { accountId ->
                             navController.navigate("account_detail/$accountId")
                         },
-                        onAddAccountClick = { navController.navigate("add_account") }
+                        onAddAccountClick = { navController.navigate("add_account") },
+                        onAddLoanClick = { navController.navigate("add_loan") },
+                        onCasualLoanClick = { personId ->
+                            navController.navigate("casual_loan_detail/$personId")
+                        },
+                        onFormalLoanClick = { loanId ->
+                            navController.navigate("formal_loan_detail/$loanId")
+                        }
                     )
                 }
                 composable(TrackerTab.Categories.route) {
@@ -290,12 +310,55 @@ fun TrackerScaffold() {
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
+                composable("add_loan") {
+                    val addLoanViewModel: AddLoanViewModel = koinViewModel()
+                    val addLoanUiState by addLoanViewModel.uiState.collectAsState()
+                    AddLoanScreen(
+                        uiState = addLoanUiState,
+                        onPersonNameChange = addLoanViewModel::onPersonNameChange,
+                        onPersonSelected = addLoanViewModel::onPersonSelected,
+                        onLoanTypeChange = addLoanViewModel::onLoanTypeChange,
+                        onDirectionChange = addLoanViewModel::onDirectionChange,
+                        onAmountChange = addLoanViewModel::onAmountChange,
+                        onCurrencyChange = addLoanViewModel::onCurrencyChange,
+                        onDescriptionChange = addLoanViewModel::onDescriptionChange,
+                        onFormalLoanNameChange = addLoanViewModel::onFormalLoanNameChange,
+                        onLenderNameChange = addLoanViewModel::onLenderNameChange,
+                        onAnnualRateChange = addLoanViewModel::onAnnualRateChange,
+                        onTermMonthsChange = addLoanViewModel::onTermMonthsChange,
+                        onMonthlyPaymentChange = addLoanViewModel::onMonthlyPaymentChange,
+                        onAccountSelected = addLoanViewModel::onAccountSelected,
+                        onSave = addLoanViewModel::saveLoan,
+                        onNavigateBack = { navController.popBackStack() },
+                        onClearError = addLoanViewModel::clearError
+                    )
+                }
                 composable("account_detail/{accountId}") { backStackEntry ->
                     val accountId =
                         backStackEntry.arguments?.getString("accountId")?.toLongOrNull() ?: 0L
                     AccountDetailScreen(
                         accountId = accountId,
                         onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+                composable("casual_loan_detail/{personId}") { backStackEntry ->
+                    val personId =
+                        backStackEntry.arguments?.getString("personId")?.toLongOrNull() ?: 0L
+                    val viewModel: CasualLoanDetailViewModel = koinViewModel()
+                    CasualLoanDetailScreen(
+                        personId = personId,
+                        onNavigateBack = { navController.popBackStack() },
+                        viewModel = viewModel
+                    )
+                }
+                composable("formal_loan_detail/{loanId}") { backStackEntry ->
+                    val loanId =
+                        backStackEntry.arguments?.getString("loanId")?.toLongOrNull() ?: 0L
+                    val viewModel: FormalLoanDetailViewModel = koinViewModel()
+                    FormalLoanDetailScreen(
+                        loanId = loanId,
+                        onNavigateBack = { navController.popBackStack() },
+                        viewModel = viewModel
                     )
                 }
                 composable("yape_setup_intro") {

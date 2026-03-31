@@ -21,4 +21,6 @@ interface TransactionRepository {
     suspend fun create(transaction: Transaction): Long
     suspend fun update(transaction: Transaction)
     suspend fun delete(transaction: Transaction)
+    suspend fun getLastBySubscriptionId(subscriptionId: Long): Transaction?
+    suspend fun deleteFutureBySubscriptionId(subscriptionId: Long, afterDate: Long)
 }

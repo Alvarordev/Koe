@@ -14,4 +14,5 @@ interface CategoryRepository {
     suspend fun archive(id: Long)
     suspend fun seedSystemCategories()
     suspend fun getTransferCategory(): Category?
+    suspend fun getOrCreateSubscriptionCategory(): Category
 }

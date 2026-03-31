@@ -59,6 +59,7 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
+import com.google.maps.android.compose.rememberUpdatedMarkerState
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -301,7 +302,8 @@ fun TransactionDetailSheet(
                             GoogleMapOptions().mapColorScheme(MapColorScheme.FOLLOW_SYSTEM)
                         }
                     ) {
-                        Marker(state = rememberMarkerState(position = position))
+                        Marker(state = rememberUpdatedMarkerState(
+                            position = position))
                     }
                 }
             }

@@ -5,6 +5,7 @@ import androidx.room.Relation
 import com.example.tracker.data.model.Account
 import com.example.tracker.data.model.Category
 import com.example.tracker.data.model.Transaction
+import com.example.tracker.data.model.UserSubscription
 
 data class TransactionWithDetails(
     @Embedded val transaction: Transaction,
@@ -13,7 +14,10 @@ data class TransactionWithDetails(
     @Relation(parentColumn = "categoryId", entityColumn = "id")
     val category: Category,
     @Relation(parentColumn = "transferToAccountId", entityColumn = "id")
-    val transferToAccounts: List<Account>
+    val transferToAccounts: List<Account>,
+    @Relation(parentColumn = "subscriptionId", entityColumn = "id")
+    val subscriptions: List<UserSubscription>
 ) {
     val transferToAccount: Account? get() = transferToAccounts.firstOrNull()
+    val subscription: UserSubscription? get() = subscriptions.firstOrNull()
 }
