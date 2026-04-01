@@ -101,7 +101,7 @@ class AddTransactionViewModel(
     }
 
     fun selectCategory(category: Category) {
-        _uiState.update { it.copy(selectedCategory = category, categorySummary = null) }
+        _uiState.update { it.copy(selectedCategory = category, categorySummary = null, categoryError = false) }
         loadCategorySummary(category.id)
     }
 
@@ -128,6 +128,7 @@ class AddTransactionViewModel(
                 amountString = "",
                 description = "",
                 submitError = null,
+                categoryError = false,
                 categorySummary = null,
                 selectedDate = System.currentTimeMillis()
             )
@@ -274,7 +275,7 @@ class AddTransactionViewModel(
 
         val category = state.selectedCategory
         if (category == null) {
-            _uiState.update { it.copy(submitError = "Please select a category") }
+            _uiState.update { it.copy(categoryError = true) }
             return
         }
 
@@ -350,6 +351,7 @@ class AddTransactionViewModel(
                 description = "",
                 isSubmitting = false,
                 submitError = null,
+                categoryError = false,
                 submitSuccess = false,
                 latitude = null,
                 longitude = null,

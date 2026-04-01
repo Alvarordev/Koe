@@ -1,5 +1,6 @@
 package com.example.tracker.presentation.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -419,6 +420,10 @@ fun TrackerScaffold() {
                     )
                 }
                 composable("add_transaction_amount") {
+                    BackHandler {
+                        addViewModel.reset()
+                        navController.popBackStack()
+                    }
                     AmountEntryScreen(
                         uiState = addUiState,
                         onAccountSelected = addViewModel::selectAccount,

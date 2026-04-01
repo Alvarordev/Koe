@@ -2,6 +2,7 @@ package com.example.tracker.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,10 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.example.tracker.data.model.Account
+import com.example.tracker.presentation.accounts.components.AccountCard
 import com.example.tracker.presentation.util.CurrencyFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,20 +41,27 @@ fun AccountPickerSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        dragHandle = null,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
         ) {
-            LazyColumn {
-                items(accounts) { account ->
-                    val accountColor = try {
-                        Color(account.color.toColorInt())
-                    } catch (_: Exception) {
-                        MaterialTheme.colorScheme.primary
-                    }
+            Text(
+                text = "Seleccione una cuenta",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+            )
 
+            Spacer(Modifier.height(20.dp))
+
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(accounts) { account ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -59,15 +69,12 @@ fun AccountPickerSheet(
                                 onAccountSelected(account)
                                 onDismiss()
                             }
-                            .padding(horizontal = 4.dp, vertical = 8.dp),
+                            .padding(top = 4.dp, bottom = 20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .height(20.dp)
-                                .width(30.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(accountColor)
+                        AccountCard(
+                            account = account,
+                            cardHeight = 36.dp
                         )
 
                         Spacer(modifier = Modifier.width(12.dp))
@@ -83,7 +90,7 @@ fun AccountPickerSheet(
                         Text(
                             text = CurrencyFormatter.formatBalance(account.currentBalance, account.currencyCode),
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = FontWeight.Normal,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

@@ -13,6 +13,7 @@ data class AddTransactionUiState(
     val description: String = "",
     val isSubmitting: Boolean = false,
     val submitError: String? = null,
+    val categoryError: Boolean = false,
     val submitSuccess: Boolean = false,
     val isLocationEnabled: Boolean = false,
     val latitude: Double? = null,

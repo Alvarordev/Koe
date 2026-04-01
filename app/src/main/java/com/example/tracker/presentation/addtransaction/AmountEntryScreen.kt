@@ -5,6 +5,9 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -26,14 +30,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,20 +57,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.app.ActivityCompat
 import androidx.core.graphics.toColorInt
+import com.example.tracker.R
 import com.example.tracker.data.enums.SupportedCurrency
 import com.example.tracker.data.model.Account
 import com.example.tracker.data.model.Category
+import com.example.tracker.presentation.accounts.components.AccountCard
 import com.example.tracker.presentation.addtransaction.components.CategoryPickerSheet
 import com.example.tracker.presentation.addtransaction.components.TransactionKeyboard
 import com.example.tracker.presentation.components.AccountPickerSheet
@@ -73,6 +93,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -143,6 +164,7 @@ fun AmountEntryScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
     var showAccountSheet by remember { mutableStateOf(false) }
+    var showDescriptionSheet by remember { mutableStateOf(false) }
     var pendingDateMillis by remember { mutableLongStateOf(uiState.selectedDate) }
 
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = uiState.selectedDate)
@@ -182,12 +204,12 @@ fun AmountEntryScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onNavigateBack) {
-                    Text(
-                        text = "Volver",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        painter = painterResource(R.drawable.xmark),
+                        contentDescription = "Close Button",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(26.dp)
                     )
                 }
 
@@ -196,13 +218,22 @@ fun AmountEntryScreen(
                 TextButton(onClick = { showDatePicker = true }) {
                     Text(
                         text = displayDate,
-                        fontSize = 14.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
+
+                IconButton(onClick = {}) {
+                    Icon(
+                        painter = painterResource(R.drawable.xmark),
+                        contentDescription = "Close Button",
+                        tint = Color.Transparent,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
             }
 
             Spacer(Modifier.height(8.dp))
@@ -253,34 +284,28 @@ fun AmountEntryScreen(
         Column {
             CategoryCard(
                 uiState = uiState,
+                showError = uiState.categoryError,
                 onClick = { showCategorySheet = true }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            BasicTextField(
-                value = uiState.description,
-                onValueChange = onDescriptionChange,
-                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                decorationBox = { innerTextField ->
-                    Box {
-                        if (uiState.description.isEmpty()) {
-                            Text(
-                                text = "Description (optional)",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        innerTextField()
-                    }
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                TextButton(onClick = { showDescriptionSheet = true }) {
+                    Text(
+                        text = if (uiState.description.isEmpty()) "Detalle de la operación" else uiState.description,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = if (uiState.description.isEmpty())
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        else
+                            MaterialTheme.colorScheme.onSurface
+                    )
                 }
-            )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -310,6 +335,75 @@ fun AmountEntryScreen(
             onAccountSelected = onAccountSelected,
             onDismiss = { showAccountSheet = false }
         )
+    }
+
+    if (showDescriptionSheet) {
+        val sheetState = rememberModalBottomSheetState(
+            skipPartiallyExpanded = true,
+            confirmValueChange = { false }
+        )
+        val focusRequester = remember { FocusRequester() }
+        val keyboardController = LocalSoftwareKeyboardController.current
+
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        }
+
+        ModalBottomSheet(
+            onDismissRequest = { showDescriptionSheet = false },
+            sheetState = sheetState,
+            dragHandle = null,
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = { showDescriptionSheet = false }) {
+                        Text("Listo")
+                    }
+                }
+                BasicTextField(
+                    value = uiState.description,
+                    onValueChange = onDescriptionChange,
+                    textStyle = TextStyle(
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        onSubmit()
+                        showDescriptionSheet = false
+                    }),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .focusRequester(focusRequester),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (uiState.description.isEmpty()) {
+                                Text(
+                                    text = "Detalle de la operación",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
     }
 
     if (showDatePicker) {
@@ -380,31 +474,80 @@ fun AmountEntryScreen(
 @Composable
 private fun CategoryCard(
     uiState: AddTransactionUiState,
+    showError: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val category = uiState.selectedCategory
 
+    val errorColor = MaterialTheme.colorScheme.error
+    val normalColor = MaterialTheme.colorScheme.outlineVariant
+    val borderColor by animateColorAsState(
+        targetValue = if (showError) errorColor else normalColor,
+        label = "categoryBorderColor"
+    )
+
+    val shakeOffset = remember { Animatable(0f) }
+    LaunchedEffect(showError) {
+        if (showError) {
+            shakeOffset.animateTo(
+                targetValue = 0f,
+                animationSpec = keyframes {
+                    durationMillis = 600
+                    0f at 0
+                    (-10f) at 60
+                    10f at 120
+                    (-8f) at 200
+                    8f at 280
+                    (-5f) at 380
+                    5f at 460
+                    0f at 600
+                }
+            )
+        }
+    }
+
     Box(
         modifier = modifier
+            .offset { IntOffset(shakeOffset.value.roundToInt(), 0) }
             .fillMaxWidth()
             .clip(RoundedCornerShape(19.dp))
             .background(MaterialTheme.colorScheme.surface)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
+                color = borderColor,
                 shape = RoundedCornerShape(19.dp)
             )
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         if (category == null) {
-            Text(
-                text = "Seleccionar categor\u00EDa",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(47.dp)
+                        .border(
+                            width = 1.5.dp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Seleccionar categor\u00EDa",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         } else {
             val categoryColor = try {
                 Color(category.color.toColorInt())
@@ -492,13 +635,20 @@ private fun AccountInfoContent(account: Account?, color: Color) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxSize()
     ) {
-        Box(
-            modifier = Modifier
-                .height(20.dp)
-                .width(30.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(color = color),
-        )
+        if (account != null) {
+            AccountCard(
+                account = account,
+                cardHeight = 20.dp
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .height(20.dp)
+                    .width(30.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(color = color),
+            )
+        }
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = account?.name ?: "No account",
