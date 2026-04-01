@@ -17,8 +17,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tracker.presentation.components.EmojiText
 
 private val emojiGroups = linkedMapOf(
     "Food & Drink" to listOf(
@@ -136,7 +138,7 @@ fun EmojiPickerDialog(
                                 .clickable { onEmojiSelected(emoji) },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = emoji, fontSize = 24.sp)
+                            EmojiText(text = emoji, style = TextStyle(fontSize = 24.sp))
                         }
                     }
                 }

@@ -54,15 +54,15 @@ import com.example.tracker.presentation.components.SegmentedControl
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import java.util.UUID
+import androidx.core.graphics.toColorInt
 
 private val categoryColorPalette = listOf(
-    "#1A73E8", "#E53935", "#2E7D32", "#F57C00",
-    "#7B1FA2", "#00838F", "#AD1457", "#37474F",
-    "#4CAF50", "#673AB7"
+    "#4679FB", "#FA0D5E", "#FB6A3C", "#04C454",
+    "#6446FB", "#FB4141", "#FBC728", "#37FBFB", "#A9FB37"
 )
 
 private fun parseColor(hex: String): Color = runCatching {
-    Color(android.graphics.Color.parseColor(hex))
+    Color(hex.toColorInt())
 }.getOrDefault(Color(0xFF1A73E8))
 
 @OptIn(ExperimentalMaterial3Api::class)

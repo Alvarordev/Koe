@@ -93,7 +93,7 @@ fun CategoryGridCard(
             Text(
                 text = "$formattedAmount $currencyCode",
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.Normal,
                 lineHeight = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

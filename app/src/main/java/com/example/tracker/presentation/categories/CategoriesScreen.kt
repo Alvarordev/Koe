@@ -42,6 +42,7 @@ import kotlinx.coroutines.launch
 import com.example.tracker.data.model.Category
 import com.example.tracker.data.model.relations.CategoryIdSummary
 import com.example.tracker.data.model.relations.SubscriptionWithDetails
+import com.example.tracker.presentation.categories.components.AddCategoryCard
 import com.example.tracker.presentation.categories.components.CategoryGridCard
 import com.example.tracker.presentation.subscriptions.components.SubscriptionRow
 
@@ -132,12 +133,14 @@ fun CategoriesScreen(
                     categories = uiState.expenseCategories,
                     summaries = uiState.categorySummaries,
                     onCategoryClick = onCategoryClick,
+                    onAddCategoryClick = onAddCategoryClick,
                     bottomPadding = contentPadding
                 )
                 1 -> CategoryGridContent(
                     categories = uiState.incomeCategories,
                     summaries = uiState.categorySummaries,
                     onCategoryClick = onCategoryClick,
+                    onAddCategoryClick = onAddCategoryClick,
                     bottomPadding = contentPadding
                 )
                 2 -> SubscriptionsContent(
@@ -155,6 +158,7 @@ private fun CategoryGridContent(
     categories: List<Category>,
     summaries: Map<Long, CategoryIdSummary>,
     onCategoryClick: (Long) -> Unit,
+    onAddCategoryClick: () -> Unit,
     bottomPadding: PaddingValues = PaddingValues()
 ) {
     LazyVerticalGrid(
@@ -178,6 +182,9 @@ private fun CategoryGridContent(
                 summary = summaries[category.id],
                 onClick = { onCategoryClick(category.id) }
             )
+        }
+        item(key = "add_category") {
+            AddCategoryCard(onClick = onAddCategoryClick)
         }
     }
 }
