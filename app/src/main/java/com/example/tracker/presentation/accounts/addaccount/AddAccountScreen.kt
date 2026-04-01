@@ -75,7 +75,7 @@ fun AddAccountScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("New Account") },
+                title = { Text(if (uiState.isEditing) "Editar cuenta" else "New Account") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -134,7 +134,11 @@ fun AddAccountScreen(
                 enabled = !uiState.isSubmitting,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (uiState.isSubmitting) "Saving..." else "Save Account")
+                Text(
+                    if (uiState.isSubmitting) "Saving..."
+                    else if (uiState.isEditing) "Guardar cambios"
+                    else "Save Account"
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

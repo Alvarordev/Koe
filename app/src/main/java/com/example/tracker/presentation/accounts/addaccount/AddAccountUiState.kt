@@ -52,5 +52,6 @@ data class AddAccountUiState(
     val formState: AddAccountFormState = AddAccountFormState.CashFormState(),
     val isSubmitting: Boolean = false,
     val submitSuccess: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isEditing: Boolean = false
 )

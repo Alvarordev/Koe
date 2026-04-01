@@ -56,19 +56,16 @@ import java.time.ZoneId
 fun AccountDetailScreen(
     accountId: Long,
     onNavigateBack: () -> Unit,
+    onEditAccount: (Long) -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: AccountDetailViewModel = koinViewModel { parametersOf(accountId) }
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val account = uiState.account
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues()
-    val topScaffoldPadding = contentPadding.calculateTopPadding()
-    val topInsetPadding = maxOf(statusBarPadding, topScaffoldPadding)
-    val bottomInsetPadding = maxOf(
-        contentPadding.calculateBottomPadding(),
-        navigationBarPadding.calculateBottomPadding()
-    )
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val topInsetPadding = maxOf(statusBarPadding, contentPadding.calculateTopPadding())
+    val bottomInsetPadding = maxOf(contentPadding.calculateBottomPadding(), navigationBarPadding)
 
     LaunchedEffect(uiState.isArchived) {
         if (uiState.isArchived) onNavigateBack()
@@ -144,8 +141,8 @@ fun AccountDetailScreen(
                             Text(
                                 text = account.name,
                                 fontSize = 24.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onBackground
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(8.dp))
                             if (balanceLabel != null) {
@@ -159,8 +156,8 @@ fun AccountDetailScreen(
                             Text(
                                 text = CurrencyFormatter.formatBalance(displayBalance, account.currencyCode),
                                 fontSize = 24.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onBackground
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -182,7 +179,10 @@ fun AccountDetailScreen(
                         ) {
                             DropdownMenuItem(
                                 text = { Text("Editar") },
-                                onClick = { menuExpanded = false }
+                                onClick = {
+                                    menuExpanded = false
+                                    onEditAccount(accountId)
+                                }
                             )
                             DropdownMenuItem(
                                 text = {
@@ -200,22 +200,6 @@ fun AccountDetailScreen(
                     }
                 }
             }
-
-//            if (account.type != AccountType.CREDIT && uiState.balanceHistory.size >= 2) {
-//                item {
-//                    Column(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(top = 12.dp)
-//                    ) {
-//                        BalanceChart(
-//                            history = uiState.balanceHistory,
-//                            currencyCode = account.currencyCode,
-//                            modifier = Modifier.fillMaxWidth(),
-//                        )
-//                    }
-//                }
-//            }
 
             val groupedTransactions = uiState.transactions
                 .sortedByDescending { it.transaction.date }

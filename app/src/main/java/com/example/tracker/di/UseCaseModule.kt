@@ -5,6 +5,7 @@ import com.example.tracker.domain.usecase.account.CreateAccountUseCase
 import com.example.tracker.domain.usecase.account.GetAccountByIdUseCase
 import com.example.tracker.domain.usecase.account.GetAccountsUseCase
 import com.example.tracker.domain.usecase.account.GetTotalAccountBalanceUseCase
+import com.example.tracker.domain.usecase.account.UpdateAccountUseCase
 import com.example.tracker.domain.usecase.budget.CreateBudgetUseCase
 import com.example.tracker.domain.usecase.budget.GetBudgetsUseCase
 import com.example.tracker.domain.usecase.category.ArchiveCategoryUseCase
@@ -61,6 +62,7 @@ val useCaseModule = module {
     factory { GetAccountByIdUseCase(get()) }
     factory { CreateAccountUseCase(get()) }
     factory { ArchiveAccountUseCase(get()) }
+    factory { UpdateAccountUseCase(get()) }
     factory { GetTotalAccountBalanceUseCase(get(), get()) }
 
     // Category

@@ -6,18 +6,89 @@ import com.example.tracker.data.enums.AccountType
 import com.example.tracker.data.enums.CardNetwork
 import com.example.tracker.data.model.Account
 import com.example.tracker.domain.usecase.account.CreateAccountUseCase
+import com.example.tracker.domain.usecase.account.GetAccountByIdUseCase
+import com.example.tracker.domain.usecase.account.UpdateAccountUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AddAccountViewModel(
-    private val createAccount: CreateAccountUseCase
+    private val createAccount: CreateAccountUseCase,
+    private val updateAccount: UpdateAccountUseCase,
+    private val getAccountById: GetAccountByIdUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddAccountUiState())
     val uiState: StateFlow<AddAccountUiState> = _uiState.asStateFlow()
+
+    private var editingAccountId: Long? = null
+    private var originalAccount: Account? = null
+
+    fun loadAccountForEdit(accountId: Long) {
+        viewModelScope.launch {
+            val account = getAccountById(accountId).firstOrNull() ?: return@launch
+            editingAccountId = account.id
+            originalAccount = account
+
+            val formState = when (account.type) {
+                AccountType.CASH -> AddAccountFormState.CashFormState(
+                    name = account.name,
+                    color = account.color,
+                    currencyCode = account.currencyCode,
+                    initialBalance = formatMinorToDisplay(account.initialBalance)
+                )
+                AccountType.DEBIT -> AddAccountFormState.DebitFormState(
+                    name = account.name,
+                    color = account.color,
+                    currencyCode = account.currencyCode,
+                    initialBalance = formatMinorToDisplay(account.initialBalance),
+                    cardNetwork = account.cardNetwork ?: CardNetwork.VISA,
+                    lastFourDigits = account.lastFourDigits ?: "",
+                    expirationDate = account.expirationDate ?: ""
+                )
+                AccountType.CREDIT -> AddAccountFormState.CreditFormState(
+                    name = account.name,
+                    color = account.color,
+                    currencyCode = account.currencyCode,
+                    creditLimit = formatMinorToDisplay(account.creditLimit ?: 0L),
+                    creditUsed = formatMinorToDisplay(account.creditUsed ?: 0L),
+                    cardNetwork = account.cardNetwork ?: CardNetwork.VISA,
+                    lastFourDigits = account.lastFourDigits ?: "",
+                    expirationDate = account.expirationDate ?: "",
+                    paymentDay = account.paymentDay?.toString() ?: "",
+                    interestRate = account.interestRate?.let { "%.2f".format(it * 100) } ?: ""
+                )
+                AccountType.SAVINGS -> AddAccountFormState.SavingsFormState(
+                    name = account.name,
+                    color = account.color,
+                    currencyCode = account.currencyCode,
+                    initialBalance = formatMinorToDisplay(account.initialBalance),
+                    interestRate = account.interestRate?.let { "%.2f".format(it * 100) } ?: ""
+                )
+            }
+
+            _uiState.update {
+                it.copy(
+                    selectedType = account.type,
+                    formState = formState,
+                    isEditing = true
+                )
+            }
+        }
+    }
+
+    private fun formatMinorToDisplay(amountMinor: Long): String {
+        if (amountMinor == 0L) return ""
+        val major = amountMinor / 100.0
+        return if (major == major.toLong().toDouble()) {
+            major.toLong().toString()
+        } else {
+            "%.2f".format(major)
+        }
+    }
 
     fun selectType(type: AccountType) {
         val freshForm = when (type) {
@@ -154,7 +225,11 @@ class AddAccountViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
             try {
-                createAccount(account)
+                if (editingAccountId != null) {
+                    updateAccount(account)
+                } else {
+                    createAccount(account)
+                }
                 _uiState.update { it.copy(isSubmitting = false, submitSuccess = true) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isSubmitting = false, errorMessage = e.message) }
@@ -163,30 +238,51 @@ class AddAccountViewModel(
     }
 
     private fun buildAccount(form: AddAccountFormState): Account? {
+        val existingAccount = originalAccount
+        val id = editingAccountId ?: 0L
+        val createdAt = existingAccount?.createdAt ?: System.currentTimeMillis()
+        val sortOrder = existingAccount?.sortOrder ?: 0
+
         return when (form) {
             is AddAccountFormState.CashFormState -> {
                 val balance = (form.initialBalance.toDoubleOrNull() ?: 0.0) * 100
+                val currentBalance = if (existingAccount != null) {
+                    existingAccount.currentBalance + (balance.toLong() - existingAccount.initialBalance)
+                } else {
+                    balance.toLong()
+                }
                 Account(
+                    id = id,
                     name = form.name,
                     type = AccountType.CASH,
                     color = form.color,
                     currencyCode = form.currencyCode,
                     initialBalance = balance.toLong(),
-                    currentBalance = balance.toLong()
+                    currentBalance = currentBalance,
+                    sortOrder = sortOrder,
+                    createdAt = createdAt
                 )
             }
             is AddAccountFormState.DebitFormState -> {
                 val balance = (form.initialBalance.toDoubleOrNull() ?: 0.0) * 100
+                val currentBalance = if (existingAccount != null) {
+                    existingAccount.currentBalance + (balance.toLong() - existingAccount.initialBalance)
+                } else {
+                    balance.toLong()
+                }
                 Account(
+                    id = id,
                     name = form.name,
                     type = AccountType.DEBIT,
                     color = form.color,
                     currencyCode = form.currencyCode,
                     initialBalance = balance.toLong(),
-                    currentBalance = balance.toLong(),
+                    currentBalance = currentBalance,
                     cardNetwork = form.cardNetwork,
                     lastFourDigits = form.lastFourDigits.ifBlank { null },
-                    expirationDate = form.expirationDate.ifBlank { null }
+                    expirationDate = form.expirationDate.ifBlank { null },
+                    sortOrder = sortOrder,
+                    createdAt = createdAt
                 )
             }
             is AddAccountFormState.CreditFormState -> {
@@ -195,6 +291,7 @@ class AddAccountViewModel(
                 val rate = form.interestRate.toDoubleOrNull()?.let { it / 100.0 }
                 val payDay = form.paymentDay.toIntOrNull()
                 Account(
+                    id = id,
                     name = form.name,
                     type = AccountType.CREDIT,
                     color = form.color,
@@ -207,20 +304,30 @@ class AddAccountViewModel(
                     creditLimit = limit.toLong(),
                     creditUsed = used.toLong(),
                     paymentDay = payDay,
-                    interestRate = rate
+                    interestRate = rate,
+                    sortOrder = sortOrder,
+                    createdAt = createdAt
                 )
             }
             is AddAccountFormState.SavingsFormState -> {
                 val balance = (form.initialBalance.toDoubleOrNull() ?: 0.0) * 100
+                val currentBalance = if (existingAccount != null) {
+                    existingAccount.currentBalance + (balance.toLong() - existingAccount.initialBalance)
+                } else {
+                    balance.toLong()
+                }
                 val rate = form.interestRate.toDoubleOrNull()?.let { it / 100.0 }
                 Account(
+                    id = id,
                     name = form.name,
                     type = AccountType.SAVINGS,
                     color = form.color,
                     currencyCode = form.currencyCode,
                     initialBalance = balance.toLong(),
-                    currentBalance = balance.toLong(),
-                    interestRate = rate
+                    currentBalance = currentBalance,
+                    interestRate = rate,
+                    sortOrder = sortOrder,
+                    createdAt = createdAt
                 )
             }
         }

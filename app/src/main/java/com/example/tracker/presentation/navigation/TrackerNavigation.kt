@@ -46,7 +46,9 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.tracker.MainActivity
 import com.example.tracker.presentation.accounts.AccountsScreen
 import com.example.tracker.presentation.accounts.accountdetail.AccountDetailScreen
@@ -271,14 +273,7 @@ fun TrackerScaffold() {
                         onAccountClick = { accountId ->
                             navController.navigate("account_detail/$accountId")
                         },
-                        onAddAccountClick = { navController.navigate("add_account") },
-                        onAddLoanClick = { navController.navigate("add_loan") },
-                        onCasualLoanClick = { personId ->
-                            navController.navigate("casual_loan_detail/$personId")
-                        },
-                        onFormalLoanClick = { loanId ->
-                            navController.navigate("formal_loan_detail/$loanId")
-                        }
+                        onAddAccountClick = { navController.navigate("add_account") }
                     )
                 }
                 composable(TrackerTab.Categories.route) {
@@ -298,8 +293,6 @@ fun TrackerScaffold() {
                 composable(TrackerTab.Settings.route) {
                     SettingsScreen(
                         contentPadding = innerPadding,
-                        onNavigateToYapeSetup = { navController.navigate("yape_setup_intro") },
-                        onNavigateToYapeStatus = { navController.navigate("yape_status") },
                         onDatabaseReset = {
                             navController.navigate(TrackerTab.Home.route) {
                                 popUpTo(navController.graph.startDestinationId) { inclusive = true }
