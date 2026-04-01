@@ -110,7 +110,7 @@ fun HomeScreen(
                     .fillMaxSize()
                     .padding(horizontal = 2.dp),
                 contentPadding = PaddingValues(
-                    top = 10.dp, // el espacio donde ocurre el fade
+                    top = 10.dp,
                     bottom = contentPadding.calculateBottomPadding()
                 ),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -128,13 +128,6 @@ fun HomeScreen(
                             transaction = transaction,
                             onClick = { selectedTransaction = transaction }
                         )
-                        if (transaction != dayGroup.transactions.last()) {
-                            HorizontalDivider(
-                                thickness = 0.5.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant,
-                                modifier = Modifier.padding(start = 68.dp)
-                            )
-                        }
                     }
                 }
             }

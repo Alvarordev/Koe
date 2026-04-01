@@ -53,6 +53,7 @@ import com.example.tracker.presentation.accounts.accountdetail.AccountDetailScre
 import com.example.tracker.presentation.accounts.addaccount.AddAccountScreen
 import com.example.tracker.presentation.addtransaction.AddTransactionViewModel
 import com.example.tracker.presentation.addtransaction.AmountEntryScreen
+import com.example.tracker.presentation.addtransaction.components.DescriptionSheet
 import com.example.tracker.presentation.categories.CategoriesScreen
 import com.example.tracker.presentation.categories.CategoriesViewModel
 import com.example.tracker.presentation.categories.addcategory.AddEditCategorySheet
@@ -130,6 +131,7 @@ fun TrackerScaffold() {
     var showAddCategorySheet by remember { mutableStateOf(false) }
     var editCategoryId by remember { mutableStateOf<Long?>(null) }
     var fabMenuExpanded by remember { mutableStateOf(false) }
+    var showDescriptionSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(currentRoute) {
         fabMenuExpanded = false
@@ -433,6 +435,7 @@ fun TrackerScaffold() {
                         onCategorySelected = addViewModel::selectCategory,
                         onDateSelected = addViewModel::onDateSelected,
                         onLocationToggle = addViewModel::onLocationToggle,
+                        onOpenDescriptionSheet = { showDescriptionSheet = true },
                         onNavigateBack = {
                             addViewModel.reset()
                             navController.popBackStack()
@@ -574,6 +577,14 @@ fun TrackerScaffold() {
                     showAddCategorySheet = false
                     editCategoryId = null
                 }
+            )
+        }
+
+        if (showDescriptionSheet) {
+            DescriptionSheet(
+                description = addUiState.description,
+                onDescriptionChange = addViewModel::onDescriptionChange,
+                onDismiss = { showDescriptionSheet = false }
             )
         }
 

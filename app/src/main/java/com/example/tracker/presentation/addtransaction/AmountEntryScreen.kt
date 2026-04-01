@@ -29,9 +29,6 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DatePicker
@@ -40,12 +37,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,16 +52,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -106,6 +96,7 @@ fun AmountEntryScreen(
     onCategorySelected: (Category) -> Unit,
     onDateSelected: (Long) -> Unit,
     onLocationToggle: (Boolean, Double?, Double?) -> Unit,
+    onOpenDescriptionSheet: () -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues()
@@ -164,7 +155,6 @@ fun AmountEntryScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
     var showAccountSheet by remember { mutableStateOf(false) }
-    var showDescriptionSheet by remember { mutableStateOf(false) }
     var pendingDateMillis by remember { mutableLongStateOf(uiState.selectedDate) }
 
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = uiState.selectedDate)
@@ -294,7 +284,7 @@ fun AmountEntryScreen(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                TextButton(onClick = { showDescriptionSheet = true }) {
+                TextButton(onClick = onOpenDescriptionSheet) {
                     Text(
                         text = if (uiState.description.isEmpty()) "Detalle de la operación" else uiState.description,
                         fontSize = 16.sp,
@@ -335,75 +325,6 @@ fun AmountEntryScreen(
             onAccountSelected = onAccountSelected,
             onDismiss = { showAccountSheet = false }
         )
-    }
-
-    if (showDescriptionSheet) {
-        val sheetState = rememberModalBottomSheetState(
-            skipPartiallyExpanded = true,
-            confirmValueChange = { false }
-        )
-        val focusRequester = remember { FocusRequester() }
-        val keyboardController = LocalSoftwareKeyboardController.current
-
-        LaunchedEffect(Unit) {
-            focusRequester.requestFocus()
-            keyboardController?.show()
-        }
-
-        ModalBottomSheet(
-            onDismissRequest = { showDescriptionSheet = false },
-            sheetState = sheetState,
-            dragHandle = null,
-            containerColor = MaterialTheme.colorScheme.surface
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = { showDescriptionSheet = false }) {
-                        Text("Listo")
-                    }
-                }
-                BasicTextField(
-                    value = uiState.description,
-                    onValueChange = onDescriptionChange,
-                    textStyle = TextStyle(
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = {
-                        onSubmit()
-                        showDescriptionSheet = false
-                    }),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .focusRequester(focusRequester),
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (uiState.description.isEmpty()) {
-                                Text(
-                                    text = "Detalle de la operación",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            innerTextField()
-                        }
-                    }
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
     }
 
     if (showDatePicker) {

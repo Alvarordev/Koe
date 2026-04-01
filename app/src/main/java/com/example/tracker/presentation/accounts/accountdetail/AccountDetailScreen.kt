@@ -52,9 +52,6 @@ import org.koin.core.parameter.parametersOf
 import java.time.Instant
 import java.time.ZoneId
 
-private const val FULL_CARD_WIDTH = 340f
-private const val THUMBNAIL_WIDTH = 70f
-
 @Composable
 fun AccountDetailScreen(
     accountId: Long,
@@ -132,36 +129,42 @@ fun AccountDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    AccountCard(
-                        account = account,
-                        cardHeight = 50.dp,
-                    )
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = account.name,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onBackground
+                    Column {
+                        AccountCard(
+                            account = account,
+                            cardHeight = 60.dp,
                         )
-                        if (balanceLabel != null) {
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Column {
                             Text(
-                                text = balanceLabel,
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = account.name,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            if (balanceLabel != null) {
+                                Text(
+                                    text = balanceLabel,
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            Text(
+                                text = CurrencyFormatter.formatBalance(displayBalance, account.currencyCode),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                         }
-                        Text(
-                            text = CurrencyFormatter.formatBalance(displayBalance, account.currencyCode),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
                     }
+
 
                     Box {
                         var menuExpanded by remember { mutableStateOf(false) }
@@ -198,21 +201,21 @@ fun AccountDetailScreen(
                 }
             }
 
-            if (account.type != AccountType.CREDIT && uiState.balanceHistory.size >= 2) {
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 12.dp)
-                    ) {
-                        BalanceChart(
-                            history = uiState.balanceHistory,
-                            currencyCode = account.currencyCode,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                }
-            }
+//            if (account.type != AccountType.CREDIT && uiState.balanceHistory.size >= 2) {
+//                item {
+//                    Column(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(top = 12.dp)
+//                    ) {
+//                        BalanceChart(
+//                            history = uiState.balanceHistory,
+//                            currencyCode = account.currencyCode,
+//                            modifier = Modifier.fillMaxWidth(),
+//                        )
+//                    }
+//                }
+//            }
 
             val groupedTransactions = uiState.transactions
                 .sortedByDescending { it.transaction.date }
@@ -228,7 +231,7 @@ fun AccountDetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)
-                            .padding(top = 24.dp, bottom = 4.dp),
+                            .padding(top = 24.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -248,7 +251,7 @@ fun AccountDetailScreen(
                     item(key = "date_$date") {
                         DaySeparator(
                             date = date,
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                            modifier = Modifier.padding(horizontal = 20.dp)
                         )
                     }
 
@@ -258,12 +261,7 @@ fun AccountDetailScreen(
                     ) { transaction ->
                         TransactionRow(
                             transaction = transaction,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-                        HorizontalDivider(
-                            thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                            modifier = Modifier.padding(start = 74.dp)
+                            modifier = Modifier.padding(horizontal = 20.dp)
                         )
                     }
                 }
