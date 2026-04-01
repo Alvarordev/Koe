@@ -2,10 +2,11 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.example.tracker"
+    namespace = "com.hazard.koe"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -13,7 +14,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.tracker"
+        applicationId = "com.hazard.koe"
         minSdk = 28
         targetSdk = 36
         versionCode = 1
@@ -110,6 +111,11 @@ dependencies {
     // adds themes for native look and feel
     implementation("com.composables:composeunstyled-platformtheme:1.49.6")
 
+    // Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
+
+    // Firebase AI Logic — no necesitas especificar versión con el BoM
+    implementation("com.google.firebase:firebase-ai")
 }
 
 ksp {

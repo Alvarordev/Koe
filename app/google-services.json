@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "354360517935",
+    "project_id": "koe-app-5af05",
+    "storage_bucket": "koe-app-5af05.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:354360517935:android:58ab26a9f1a190fe6badda",
+        "android_client_info": {
+          "package_name": "com.hazard.koe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdGJGSPMTEZ6-KUXxRdGzoQzCqXcan908"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

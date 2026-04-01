@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
-        android:name=".TrackerApp"
+        android:name=".KoeApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -14,7 +14,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Tracker">
+        android:theme="@style/Theme.Koe">
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDxrIAqptWGWmEAa55lbyUNI_J6dbsw9Ww" />
@@ -23,7 +23,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Tracker">
+            android:theme="@style/Theme.Koe">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -37,7 +37,7 @@
         </activity>
         <service
             android:name=".feature.yape.YapeNotificationListenerService"
-            android:label="Tracker Yape Listener"
+            android:label="Koe Yape Listener"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>

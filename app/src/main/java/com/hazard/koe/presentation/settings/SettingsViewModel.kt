@@ -1,0 +1,90 @@
+package com.hazard.koe.presentation.settings
+
+import android.content.ComponentName
+import android.content.Context
+import android.provider.Settings
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.hazard.koe.data.preferences.ThemePreference
+import com.hazard.koe.data.preferences.ThemePreferences
+import com.hazard.koe.data.preferences.YapePreferences
+import com.hazard.koe.domain.usecase.database.ResetDatabaseUseCase
+import com.hazard.koe.feature.yape.YapeNotificationListenerService
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+class SettingsViewModel(
+    private val themePreferences: ThemePreferences,
+    private val yapePreferences: YapePreferences,
+    private val resetDatabaseUseCase: ResetDatabaseUseCase,
+    private val context: Context
+) : ViewModel() {
+
+    val themePreference: StateFlow<ThemePreference> = themePreferences.themePreference
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ThemePreference.System
+        )
+
+    val isDarkMode: StateFlow<Boolean> = themePreferences.isDarkMode
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = false
+        )
+
+    private val _yapeActive = MutableStateFlow(false)
+    val yapeActive: StateFlow<Boolean> = _yapeActive.asStateFlow()
+
+    private val _isResetting = MutableStateFlow(false)
+    val isResetting: StateFlow<Boolean> = _isResetting.asStateFlow()
+
+    private val _resetComplete = MutableStateFlow(false)
+    val resetComplete: StateFlow<Boolean> = _resetComplete.asStateFlow()
+
+    val isOnboardingComplete: StateFlow<Boolean> = yapePreferences.isOnboardingComplete
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = false
+        )
+
+    fun refreshYapeStatus() {
+        _yapeActive.value = isNotificationListenerEnabled(context)
+    }
+
+    fun setThemePreference(preference: ThemePreference) {
+        viewModelScope.launch {
+            themePreferences.setThemePreference(preference)
+        }
+    }
+
+    fun resetDatabase() {
+        viewModelScope.launch {
+            _isResetting.value = true
+            try {
+                resetDatabaseUseCase()
+                _resetComplete.value = true
+            } finally {
+                _isResetting.value = false
+            }
+        }
+    }
+
+    fun onResetCompleteHandled() {
+        _resetComplete.value = false
+    }
+
+    companion object {
+        fun isNotificationListenerEnabled(context: Context): Boolean {
+            val componentName = ComponentName(context, YapeNotificationListenerService::class.java)
+            val flat = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners") ?: ""
+            return flat.split(":").any { ComponentName.unflattenFromString(it) == componentName }
+        }
+    }
+}
