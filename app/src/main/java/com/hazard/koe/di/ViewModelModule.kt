@@ -14,6 +14,7 @@ import com.hazard.koe.presentation.settings.SettingsViewModel
 import com.hazard.koe.presentation.settings.yapesetup.YapeSetupViewModel
 import com.hazard.koe.presentation.subscriptions.SubscriptionViewModel
 import com.hazard.koe.presentation.transfer.TransferViewModel
+import com.hazard.koe.presentation.voice.voicetransaction.VoiceTransactionViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -33,4 +34,5 @@ val viewModelModule = module {
     viewModel { AddLoanViewModel(get(), get(), get(), get(), get()) }
     viewModel { (personId: Long) -> CasualLoanDetailViewModel(personId, get(), get()) }
     viewModel { (loanId: Long) -> FormalLoanDetailViewModel(loanId, get()) }
+    viewModel { VoiceTransactionViewModel(get(), get(), get(), get(), get(), get()) }
 }

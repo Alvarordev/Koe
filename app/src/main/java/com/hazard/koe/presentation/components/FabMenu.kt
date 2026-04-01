@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -31,7 +32,8 @@ fun FabMenu(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     navController: NavController,
-    onTransactionPress: () -> Unit
+    onTransactionPress: () -> Unit,
+    onVoiceTransactionPress: () -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -80,6 +82,17 @@ fun FabMenu(
             },
             icon = { Icon(Icons.Default.Receipt, contentDescription = null) },
             text = { Text("Operación") },
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.background
+        )
+        FloatingActionButtonMenuItem(
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onExpandedChange(false)
+                onVoiceTransactionPress()
+            },
+            icon = { Icon(Icons.Default.Mic, contentDescription = null) },
+            text = { Text("Voz") },
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.background
         )

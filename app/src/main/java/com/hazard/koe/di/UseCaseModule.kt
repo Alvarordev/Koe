@@ -42,6 +42,8 @@ import com.hazard.koe.domain.usecase.loan.SaveCasualLoanUseCase
 import com.hazard.koe.domain.usecase.loan.SaveFormalLoanUseCase
 import com.hazard.koe.domain.usecase.person.SavePersonUseCase
 import com.hazard.koe.domain.usecase.yape.ProcessYapeShareImageUseCase
+import com.hazard.koe.domain.usecase.voice.InferTransactionFromVoiceUseCase
+import com.hazard.koe.domain.usecase.voice.ObserveVoiceLocationSettingUseCase
 import org.koin.dsl.module
 
 val useCaseModule = module {
@@ -103,6 +105,10 @@ val useCaseModule = module {
 
     // Yape
     factory { ProcessYapeShareImageUseCase(get(), get()) }
+
+    // Voice
+    factory { InferTransactionFromVoiceUseCase(get()) }
+    factory { ObserveVoiceLocationSettingUseCase(get()) }
 
     // Database
     factory { ResetDatabaseUseCase(get()) }

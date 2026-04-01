@@ -76,6 +76,7 @@ import com.hazard.koe.domain.usecase.subscription.ProcessSubscriptionBillingUseC
 import com.hazard.koe.presentation.transfer.TransferAmountScreen
 import com.hazard.koe.presentation.transfer.TransferSourceScreen
 import com.hazard.koe.presentation.transfer.TransferViewModel
+import com.hazard.koe.presentation.voice.voicetransaction.VoiceTransactionScreen
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -147,6 +148,7 @@ fun TrackerScaffold() {
             "transfer_source",
             "transfer_amount",
             "add_transaction",
+            "voice_transaction",
             "subscription_picker",
             "subscription_detail"
         )
@@ -185,7 +187,8 @@ fun TrackerScaffold() {
                         expanded = fabMenuExpanded,
                         onExpandedChange = { fabMenuExpanded = it },
                         navController = navController,
-                        onTransactionPress = { navController.navigate("add_transaction_amount") }
+                        onTransactionPress = { navController.navigate("add_transaction_amount") },
+                        onVoiceTransactionPress = { navController.navigate("voice_transaction") }
                     )
                 }
             },
@@ -432,6 +435,11 @@ fun TrackerScaffold() {
                             navController.popBackStack()
                         },
                         contentPadding = innerPadding
+                    )
+                }
+                composable("voice_transaction") {
+                    VoiceTransactionScreen(
+                        onNavigateBack = { navController.popBackStack() }
                     )
                 }
                 composable(
