@@ -281,10 +281,16 @@ class VoiceTransactionViewModel(
                         countdownSeconds = VoiceTransactionUiState.RECORDING_DURATION_SECONDS
                     )
                 }
+                val amountDisplay = "S/ %.2f".format(amountMinor / 100.0)
+                val label = if (description.isNotBlank()) {
+                    "$description · $amountDisplay"
+                } else {
+                    "${category.name} · $amountDisplay"
+                }
                 _creationResult.emit(
                     VoiceTransactionCreationResult(
                         transactionId = createdId,
-                        message = "Transacción creada",
+                        message = label,
                         undoLabel = "Deshacer"
                     )
                 )

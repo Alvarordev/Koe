@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.unit.Dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Mic
@@ -33,13 +34,14 @@ fun FabMenu(
     onExpandedChange: (Boolean) -> Unit,
     navController: NavController,
     onTransactionPress: () -> Unit,
-    onVoiceTransactionPress: () -> Unit
+    onVoiceTransactionPress: () -> Unit,
+    extraOffsetY: Dp = 0.dp
 ) {
     val haptic = LocalHapticFeedback.current
 
     FloatingActionButtonMenu(
         expanded = expanded,
-        modifier = Modifier.offset(x = 12.dp, y = 12.dp),
+        modifier = Modifier.offset(x = 12.dp, y = 12.dp + extraOffsetY),
         button = {
             FloatingActionButton(
                 onClick = {
