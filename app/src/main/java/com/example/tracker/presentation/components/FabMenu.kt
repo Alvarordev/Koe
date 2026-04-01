@@ -58,7 +58,7 @@ fun FabMenu(
                     onExpandedChange(!expanded)
                 },
                 shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.onSurface,
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.background
             ) {
                 val rotation by animateFloatAsState(
@@ -81,7 +81,9 @@ fun FabMenu(
                 navController.navigate("transfer_source")
             },
             icon = { Icon(Icons.Default.SwapVert, contentDescription = null) },
-            text = { Text("Transfer") }
+            text = { Text("Trasnferencia") },
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.background
         )
         FloatingActionButtonMenuItem(
             onClick = {
@@ -90,7 +92,9 @@ fun FabMenu(
                 onTransactionPress()
             },
             icon = { Icon(Icons.Default.Receipt, contentDescription = null) },
-            text = { Text("Transaction") }
+            text = { Text("Operación") },
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.background
         )
     }
 }

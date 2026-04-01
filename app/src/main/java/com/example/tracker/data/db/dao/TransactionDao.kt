@@ -27,7 +27,7 @@ interface TransactionDao {
     fun getById(id: Long): Flow<TransactionWithDetails?>
 
     @RoomTransaction
-    @Query("SELECT * FROM transactions WHERE accountId = :accountId OR transferToAccountId = :accountId ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE accountId = :accountId OR transferToAccountId = :accountId ORDER BY date DESC LIMIT 20")
     fun getByAccount(accountId: Long): Flow<List<TransactionWithDetails>>
 
     @RoomTransaction

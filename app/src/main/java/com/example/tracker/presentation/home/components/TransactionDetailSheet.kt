@@ -158,7 +158,7 @@ fun TransactionDetailSheet(
                         text = "Categoría",
                         fontWeight = FontWeight.Normal,
                         fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     EmojiText(text = category.emoji, style = TextStyle(fontSize = 15.sp))
@@ -180,7 +180,7 @@ fun TransactionDetailSheet(
                         text = "Cuenta",
                         fontWeight = FontWeight.Normal,
                         fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     Row (
@@ -211,7 +211,7 @@ fun TransactionDetailSheet(
                             text = "Descripción",
                             fontWeight = FontWeight.Normal,
                             fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.weight(1f))
 

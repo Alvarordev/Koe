@@ -30,6 +30,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -414,10 +415,40 @@ fun TrackerScaffold() {
                         contentPadding = innerPadding
                     )
                 }
-                composable("add_transaction_amount") {
-                    BackHandler {
-                        addViewModel.reset()
-                        navController.popBackStack()
+                composable(
+                    "add_transaction_amount",
+                    enterTransition = {
+                        slideInVertically(
+                            initialOffsetY = { it / 2 }, // 👈 desde abajo
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)
+                            )
+                        ) + fadeIn()
+                    },
+                    exitTransition = {
+                        slideOutVertically(
+                            targetOffsetY = { it / 2 }, // 👈 hacia abajo
+                            animationSpec = tween(250)
+                        )
+                    },
+                    popEnterTransition = {
+                        slideInVertically(
+                            initialOffsetY = { it },
+                            animationSpec = tween(300)
+                        ) + fadeIn()
+                    },
+                    popExitTransition = {
+                        slideOutVertically(
+                            targetOffsetY = { it },
+                            animationSpec = tween(250)
+                        )
+                    }
+                    ) {
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            addViewModel.reset()
+                        }
                     }
                     AmountEntryScreen(
                         uiState = addUiState,
