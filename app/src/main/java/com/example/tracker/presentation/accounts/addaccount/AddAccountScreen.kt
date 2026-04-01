@@ -62,10 +62,15 @@ private fun parseColor(hex: String): Color = runCatching {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddAccountScreen(
+    accountId: Long? = null,
     onNavigateBack: () -> Unit,
     viewModel: AddAccountViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(accountId) {
+        accountId?.let { viewModel.loadAccountForEdit(it) }
+    }
 
     LaunchedEffect(uiState.submitSuccess) {
         if (uiState.submitSuccess) {

@@ -97,6 +97,7 @@ enum class TrackerTab(
 
 private val bottomBarSuppressedRoutes = setOf(
     "add_account",
+    "edit_account",
     "account_detail/{accountId}",
     "yape_setup_intro",
     "yape_setup_account",
@@ -140,7 +141,21 @@ fun TrackerScaffold() {
         fabMenuExpanded = false
     }
 
-    val showBottomBar = currentRoute !in bottomBarSuppressedRoutes
+    val showBottomBar = currentRoute?.let { route ->
+        val suppressedPrefixes = listOf(
+            "add_account",
+            "edit_account",
+            "account_detail",
+            "yape_setup",
+            "yape_status",
+            "transfer_source",
+            "transfer_amount",
+            "add_transaction",
+            "subscription_picker",
+            "subscription_detail"
+        )
+        suppressedPrefixes.none { prefix -> route.startsWith(prefix) }
+    } ?: true
     val currentTabRoute = TrackerTab.entries.firstOrNull { tab ->
         currentDestination?.hierarchy?.any { it.route == tab.route } == true
     }?.route ?: TrackerTab.Home.route
@@ -307,6 +322,13 @@ fun TrackerScaffold() {
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
+                composable("edit_account/{accountId}") { backStackEntry ->
+                    val accountId = backStackEntry.arguments?.getString("accountId")?.toLongOrNull()
+                    AddAccountScreen(
+                        accountId = accountId,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
                 composable("add_loan") {
                     val addLoanViewModel: AddLoanViewModel = koinViewModel()
                     val addLoanUiState by addLoanViewModel.uiState.collectAsState()
@@ -335,7 +357,8 @@ fun TrackerScaffold() {
                         backStackEntry.arguments?.getString("accountId")?.toLongOrNull() ?: 0L
                     AccountDetailScreen(
                         accountId = accountId,
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        onEditAccount = { id -> navController.navigate("edit_account/$id") }
                     )
                 }
                 composable("casual_loan_detail/{personId}") { backStackEntry ->
