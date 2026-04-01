@@ -8,18 +8,28 @@ data class VoiceTransactionUiState(
     val phase: VoiceTransactionPhase = VoiceTransactionPhase.IDLE,
     val isSubmitting: Boolean = false,
     val errorMessage: String? = null,
-    val confidence: Float = 0f,
-    val confidenceThreshold: Float = 0.75f,
+    val recordingElapsedMillis: Long = 0L,
+    val countdownSeconds: Int = RECORDING_DURATION_SECONDS,
+    val rmsLevel: Float = 0f,
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
     val selectedAccount: Account? = null,
     val selectedCategory: Category? = null,
-    val amountMinor: Long = 0L,
-    val description: String = "",
-    val transactionType: TransactionType = TransactionType.EXPENSE,
+    val inferredAmountMinor: Long = 0L,
+    val inferredDescription: String = "",
+    val inferredTransactionType: TransactionType = TransactionType.EXPENSE,
     val selectedDate: Long = System.currentTimeMillis(),
     val isLocationEnabled: Boolean = false,
     val latitude: Double? = null,
-    val longitude: Double? = null,
-    val saveSuccess: Boolean = false
+    val longitude: Double? = null
+) {
+    companion object {
+        const val RECORDING_DURATION_SECONDS = 10
+    }
+}
+
+data class VoiceTransactionCreationResult(
+    val transactionId: Long,
+    val message: String,
+    val undoLabel: String
 )

@@ -34,5 +34,5 @@ val viewModelModule = module {
     viewModel { AddLoanViewModel(get(), get(), get(), get(), get()) }
     viewModel { (personId: Long) -> CasualLoanDetailViewModel(personId, get(), get()) }
     viewModel { (loanId: Long) -> FormalLoanDetailViewModel(loanId, get()) }
-    viewModel { VoiceTransactionViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { VoiceTransactionViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }

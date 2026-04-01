@@ -11,8 +11,10 @@ class AndroidVoiceAudioRecorder(
     private var mediaRecorder: MediaRecorder? = null
     private var outputFile: File? = null
     private var isRecording: Boolean = false
+    private var rmsCallback: ((Float) -> Unit)? = null
+    private var rmsThread: Thread? = null
 
-    override fun startRecording(): Result<Unit> {
+    override fun startRecording(onRmsChanged: ((Float) -> Unit)?): Result<Unit> {
         return runCatching {
             if (isRecording) return@runCatching
 
@@ -31,6 +33,26 @@ class AndroidVoiceAudioRecorder(
             outputFile = file
             mediaRecorder = recorder
             isRecording = true
+            rmsCallback = onRmsChanged
+
+            if (onRmsChanged != null) {
+                rmsThread = Thread {
+                    while (isRecording) {
+                        try {
+                            val maxAmplitude = recorder.maxAmplitude
+                            val normalized = if (maxAmplitude > 0) {
+                                (maxAmplitude / 32767f).coerceIn(0f, 1f)
+                            } else {
+                                0f
+                            }
+                            onRmsChanged(normalized)
+                            Thread.sleep(50)
+                        } catch (_: Exception) {
+                            break
+                        }
+                    }
+                }.also { it.start() }
+            }
         }
     }
 
@@ -43,12 +65,16 @@ class AndroidVoiceAudioRecorder(
                 throw IllegalStateException("No hay grabación activa")
             }
 
+            isRecording = false
+            rmsThread?.join(200)
+            rmsThread = null
+            rmsCallback = null
+
             recorder.stop()
             recorder.reset()
             recorder.release()
 
             mediaRecorder = null
-            isRecording = false
 
             val bytes = file.readBytes()
             file.delete()
@@ -72,6 +98,11 @@ class AndroidVoiceAudioRecorder(
     }
 
     private fun cleanupRecorder(deleteFile: Boolean) {
+        isRecording = false
+        rmsThread?.join(200)
+        rmsThread = null
+        rmsCallback = null
+
         runCatching {
             mediaRecorder?.reset()
         }
@@ -79,7 +110,6 @@ class AndroidVoiceAudioRecorder(
             mediaRecorder?.release()
         }
         mediaRecorder = null
-        isRecording = false
 
         if (deleteFile) {
             runCatching {

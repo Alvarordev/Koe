@@ -4,8 +4,5 @@ enum class VoiceTransactionPhase {
     IDLE,
     RECORDING,
     PROCESSING,
-    CONFIRM,
-    MANUAL_EDIT,
-    SUCCESS,
     ERROR
 }

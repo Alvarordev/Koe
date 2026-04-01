@@ -14,11 +14,18 @@ import com.hazard.koe.domain.model.VoiceTransactionInferenceRequest
 import com.hazard.koe.domain.usecase.account.GetAccountsUseCase
 import com.hazard.koe.domain.usecase.category.GetCategoriesUseCase
 import com.hazard.koe.domain.usecase.transaction.CreateTransactionUseCase
+import com.hazard.koe.domain.usecase.transaction.DeleteTransactionUseCase
 import com.hazard.koe.domain.usecase.voice.InferTransactionFromVoiceUseCase
 import com.hazard.koe.domain.usecase.voice.ObserveVoiceLocationSettingUseCase
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -26,6 +33,7 @@ class VoiceTransactionViewModel(
     private val getAccounts: GetAccountsUseCase,
     private val getCategories: GetCategoriesUseCase,
     private val createTransaction: CreateTransactionUseCase,
+    private val deleteTransaction: DeleteTransactionUseCase,
     private val inferTransactionFromVoice: InferTransactionFromVoiceUseCase,
     private val voiceAudioRecorder: VoiceAudioRecorder,
     private val observeVoiceLocationSetting: ObserveVoiceLocationSettingUseCase
@@ -33,6 +41,10 @@ class VoiceTransactionViewModel(
 
     private val _uiState = MutableStateFlow(VoiceTransactionUiState())
     val uiState: StateFlow<VoiceTransactionUiState> = _uiState
+    private val _creationResult = MutableSharedFlow<VoiceTransactionCreationResult>(extraBufferCapacity = 1)
+    val creationResult: SharedFlow<VoiceTransactionCreationResult> = _creationResult.asSharedFlow()
+    private var recordingTimerJob: Job? = null
+    private var lastCreatedTransaction: Transaction? = null
 
     init {
         observeAccounts()
@@ -41,8 +53,11 @@ class VoiceTransactionViewModel(
     }
 
     fun startRecording() {
-        val startResult = voiceAudioRecorder.startRecording()
+        val startResult = voiceAudioRecorder.startRecording { rmsLevel ->
+            _uiState.update { it.copy(rmsLevel = rmsLevel) }
+        }
         if (startResult.isFailure) {
+            stopTimer()
             _uiState.update {
                 it.copy(
                     phase = VoiceTransactionPhase.ERROR,
@@ -56,12 +71,17 @@ class VoiceTransactionViewModel(
             it.copy(
                 phase = VoiceTransactionPhase.RECORDING,
                 errorMessage = null,
-                saveSuccess = false
+                recordingElapsedMillis = 0L,
+                countdownSeconds = VoiceTransactionUiState.RECORDING_DURATION_SECONDS,
+                rmsLevel = 0f
             )
         }
+        startTimer()
     }
 
     fun stopRecording() {
+        stopTimer()
+        _uiState.update { it.copy(rmsLevel = 0f) }
         val recordedAudioResult = voiceAudioRecorder.stopRecording()
         recordedAudioResult
             .onSuccess { recordedAudio ->
@@ -77,101 +97,33 @@ class VoiceTransactionViewModel(
             }
     }
 
-    fun retry() {
-        startRecording()
+    fun toggleRecording() {
+        when (_uiState.value.phase) {
+            VoiceTransactionPhase.RECORDING -> stopRecording()
+            VoiceTransactionPhase.PROCESSING -> Unit
+            else -> startRecording()
+        }
     }
 
-    fun goManualEdit() {
-        _uiState.update { it.copy(phase = VoiceTransactionPhase.MANUAL_EDIT, errorMessage = null) }
-    }
-
-    fun confirmAndSave() {
-        val state = _uiState.value
-        val account = state.selectedAccount
-        val category = state.selectedCategory
-        if (account == null || category == null || state.amountMinor <= 0L) {
-            _uiState.update {
-                it.copy(
-                    phase = VoiceTransactionPhase.ERROR,
-                    errorMessage = "Completa cuenta, categoría y monto antes de guardar"
-                )
-            }
-            return
-        }
-
-        if (state.isLocationEnabled && (state.latitude == null || state.longitude == null)) {
-            _uiState.update {
-                it.copy(
-                    phase = VoiceTransactionPhase.ERROR,
-                    errorMessage = "No se pudo obtener ubicación. Verifica permisos o intenta de nuevo"
-                )
-            }
-            return
-        }
-
-        _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
+    fun undoLastCreatedTransaction() {
+        val transaction = lastCreatedTransaction ?: return
         viewModelScope.launch {
             runCatching {
-                createTransaction(
-                    Transaction(
-                        type = state.transactionType,
-                        amount = state.amountMinor,
-                        description = state.description.ifBlank { null },
-                        accountId = account.id,
-                        categoryId = category.id,
-                        date = state.selectedDate,
-                        latitude = if (state.isLocationEnabled) state.latitude else null,
-                        longitude = if (state.isLocationEnabled) state.longitude else null
-                    )
-                )
-            }.onSuccess {
-                _uiState.update {
-                    it.copy(
-                        isSubmitting = false,
-                        phase = VoiceTransactionPhase.SUCCESS,
-                        saveSuccess = true
-                    )
-                }
+                deleteTransaction(transaction)
+                lastCreatedTransaction = null
             }.onFailure {
-                _uiState.update {
-                    it.copy(
-                        isSubmitting = false,
+                _uiState.update { state ->
+                    state.copy(
                         phase = VoiceTransactionPhase.ERROR,
-                        errorMessage = "No se pudo guardar la transacción"
+                        errorMessage = "No se pudo deshacer la transacción"
                     )
                 }
             }
         }
-    }
-
-    fun updateAmountFromInput(input: String) {
-        val parsed = parseMinorUnits(input)
-        _uiState.update { it.copy(amountMinor = parsed) }
-    }
-
-    fun updateDescription(value: String) {
-        _uiState.update { it.copy(description = value) }
-    }
-
-    fun updateSelectedCategory(category: Category) {
-        _uiState.update {
-            it.copy(
-                selectedCategory = category,
-                transactionType = if (category.type == CategoryType.INCOME) TransactionType.INCOME else TransactionType.EXPENSE
-            )
-        }
-    }
-
-    fun updateSelectedAccount(account: Account) {
-        _uiState.update { it.copy(selectedAccount = account) }
     }
 
     fun updateLocation(latitude: Double?, longitude: Double?) {
         _uiState.update { it.copy(latitude = latitude, longitude = longitude) }
-    }
-
-    fun consumeSaveSuccess() {
-        _uiState.update { it.copy(saveSuccess = false) }
     }
 
     private fun observeAccounts() {
@@ -210,8 +162,8 @@ class VoiceTransactionViewModel(
     }
 
     private fun processRecordedAudio(audioBytes: ByteArray, audioMimeType: String) {
-        val state = _uiState.value
         _uiState.update { it.copy(phase = VoiceTransactionPhase.PROCESSING, errorMessage = null) }
+        val state = _uiState.value
         val request = VoiceTransactionInferenceRequest(
             audioBytes = audioBytes,
             audioMimeType = audioMimeType,
@@ -235,30 +187,34 @@ class VoiceTransactionViewModel(
         viewModelScope.launch {
             inferTransactionFromVoice(request)
                 .onSuccess { inference ->
-                    val account = state.accounts.firstOrNull { it.id == inference.accountId }
-                    val category = state.categories.firstOrNull { it.id == inference.categoryId }
-                        ?: state.categories.firstOrNull { categoryCandidate ->
-                            categoryCandidate.type == if (inference.transactionType == TransactionType.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
+                    val currentState = _uiState.value
+                    val account = currentState.accounts.firstOrNull { it.id == inference.accountId }
+                    val category = currentState.categories.firstOrNull { it.id == inference.categoryId }
+                        ?: currentState.categories.firstOrNull { categoryCandidate ->
+                            categoryCandidate.type == if (inference.transactionType == TransactionType.INCOME) {
+                                CategoryType.INCOME
+                            } else {
+                                CategoryType.EXPENSE
+                            }
                         }
 
-                    val nextPhase = if (inference.confidence >= state.confidenceThreshold) {
-                        VoiceTransactionPhase.CONFIRM
-                    } else {
-                        VoiceTransactionPhase.MANUAL_EDIT
+                    if (inference.amountMinor <= 0L || account == null || category == null) {
+                        _uiState.update {
+                            it.copy(
+                                phase = VoiceTransactionPhase.ERROR,
+                                errorMessage = "No se pudo completar la transacción con el audio"
+                            )
+                        }
+                        return@onSuccess
                     }
 
-                    _uiState.update {
-                        it.copy(
-                            phase = nextPhase,
-                            confidence = inference.confidence,
-                            amountMinor = inference.amountMinor,
-                            transactionType = inference.transactionType,
-                            selectedAccount = account ?: it.selectedAccount,
-                            selectedCategory = category ?: it.selectedCategory,
-                            description = inference.description ?: it.description,
-                            errorMessage = null
-                        )
-                    }
+                    createFromInference(
+                        amountMinor = inference.amountMinor,
+                        account = account,
+                        category = category,
+                        description = inference.description.orEmpty(),
+                        transactionType = inference.transactionType
+                    )
                 }
                 .onFailure {
                     _uiState.update {
@@ -271,19 +227,112 @@ class VoiceTransactionViewModel(
         }
     }
 
-    private fun parseMinorUnits(input: String): Long {
-        val cleaned = input.trim().replace(',', '.')
-        if (cleaned.isBlank()) return 0L
-        val parts = cleaned.split('.')
-        val integerPart = parts.firstOrNull()?.filter { it.isDigit() }.orEmpty().ifBlank { "0" }
-        val fractionRaw = parts.getOrNull(1)?.filter { it.isDigit() }.orEmpty()
-        val fraction = fractionRaw.padEnd(2, '0').take(2)
-        val major = integerPart.toLongOrNull() ?: 0L
-        val minor = fraction.toLongOrNull() ?: 0L
-        return major * 100L + minor
+    private fun createFromInference(
+        amountMinor: Long,
+        account: Account,
+        category: Category,
+        description: String,
+        transactionType: TransactionType
+    ) {
+        val snapshot = _uiState.value
+        if (snapshot.isLocationEnabled && (snapshot.latitude == null || snapshot.longitude == null)) {
+            _uiState.update {
+                it.copy(
+                    phase = VoiceTransactionPhase.ERROR,
+                    errorMessage = "No se pudo obtener ubicación. Verifica permisos o intenta de nuevo"
+                )
+            }
+            return
+        }
+
+        val transaction = Transaction(
+            type = transactionType,
+            amount = amountMinor,
+            description = description.ifBlank { null },
+            accountId = account.id,
+            categoryId = category.id,
+            date = snapshot.selectedDate,
+            latitude = if (snapshot.isLocationEnabled) snapshot.latitude else null,
+            longitude = if (snapshot.isLocationEnabled) snapshot.longitude else null
+        )
+
+        _uiState.update {
+            it.copy(
+                isSubmitting = true,
+                inferredAmountMinor = amountMinor,
+                inferredDescription = description,
+                inferredTransactionType = transactionType,
+                selectedAccount = account,
+                selectedCategory = category,
+                errorMessage = null
+            )
+        }
+
+        viewModelScope.launch {
+            runCatching {
+                createTransaction(transaction)
+            }.onSuccess { createdId ->
+                lastCreatedTransaction = transaction.copy(id = createdId)
+                _uiState.update { state ->
+                    state.copy(
+                        phase = VoiceTransactionPhase.IDLE,
+                        isSubmitting = false,
+                        recordingElapsedMillis = 0L,
+                        countdownSeconds = VoiceTransactionUiState.RECORDING_DURATION_SECONDS
+                    )
+                }
+                _creationResult.emit(
+                    VoiceTransactionCreationResult(
+                        transactionId = createdId,
+                        message = "Transacción creada",
+                        undoLabel = "Deshacer"
+                    )
+                )
+            }.onFailure {
+                _uiState.update { state ->
+                    state.copy(
+                        phase = VoiceTransactionPhase.ERROR,
+                        isSubmitting = false,
+                        errorMessage = "No se pudo guardar la transacción"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun startTimer() {
+        recordingTimerJob?.cancel()
+        recordingTimerJob = viewModelScope.launch {
+            while (isActive) {
+                delay(1000)
+                _uiState.update { state ->
+                    if (state.phase == VoiceTransactionPhase.RECORDING) {
+                        val newElapsed = state.recordingElapsedMillis + 1000L
+                        val newCountdown = (VoiceTransactionUiState.RECORDING_DURATION_SECONDS - (newElapsed / 1000).toInt())
+                            .coerceAtLeast(0)
+                        state.copy(
+                            recordingElapsedMillis = newElapsed,
+                            countdownSeconds = newCountdown
+                        )
+                    } else {
+                        state
+                    }
+                }
+                if (_uiState.value.countdownSeconds <= 0) {
+                    stopRecording()
+                    break
+                }
+            }
+        }
+    }
+
+    private fun stopTimer() {
+        recordingTimerJob?.cancel()
+        recordingTimerJob = null
     }
 
     override fun onCleared() {
+        stopTimer()
         voiceAudioRecorder.release()
         super.onCleared()
     }

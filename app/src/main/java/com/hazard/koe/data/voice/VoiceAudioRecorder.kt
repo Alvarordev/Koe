@@ -6,7 +6,7 @@ data class RecordedVoiceAudio(
 )
 
 interface VoiceAudioRecorder {
-    fun startRecording(): Result<Unit>
+    fun startRecording(onRmsChanged: ((Float) -> Unit)? = null): Result<Unit>
     fun stopRecording(): Result<RecordedVoiceAudio>
     fun cancelRecording()
     fun release()

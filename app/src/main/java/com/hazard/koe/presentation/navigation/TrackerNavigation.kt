@@ -28,6 +28,10 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -76,7 +80,9 @@ import com.hazard.koe.domain.usecase.subscription.ProcessSubscriptionBillingUseC
 import com.hazard.koe.presentation.transfer.TransferAmountScreen
 import com.hazard.koe.presentation.transfer.TransferSourceScreen
 import com.hazard.koe.presentation.transfer.TransferViewModel
+import com.hazard.koe.presentation.voice.voicetransaction.VoiceTransactionCreationResult
 import com.hazard.koe.presentation.voice.voicetransaction.VoiceTransactionScreen
+import com.hazard.koe.presentation.voice.voicetransaction.VoiceTransactionViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -133,6 +139,9 @@ fun TrackerScaffold() {
     var editCategoryId by remember { mutableStateOf<Long?>(null) }
     var fabMenuExpanded by remember { mutableStateOf(false) }
     var showDescriptionSheet by remember { mutableStateOf(false) }
+    val appSnackbarHostState = remember { SnackbarHostState() }
+    var pendingVoiceUndoEvent by remember { mutableStateOf<VoiceTransactionCreationResult?>(null) }
+    val voiceTransactionViewModel: VoiceTransactionViewModel = koinViewModel()
 
     LaunchedEffect(currentRoute) {
         fabMenuExpanded = false
@@ -178,9 +187,24 @@ fun TrackerScaffold() {
         }
     }
 
+    LaunchedEffect(pendingVoiceUndoEvent) {
+        val event = pendingVoiceUndoEvent ?: return@LaunchedEffect
+        pendingVoiceUndoEvent = null
+        val result = appSnackbarHostState.showSnackbar(
+            message = event.message,
+            actionLabel = event.undoLabel,
+            withDismissAction = true,
+            duration = SnackbarDuration.Long
+        )
+        if (result == SnackbarResult.ActionPerformed) {
+            voiceTransactionViewModel.undoLastCreatedTransaction()
+        }
+    }
+
     SharedTransitionLayout {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
+            snackbarHost = { SnackbarHost(hostState = appSnackbarHostState) },
             floatingActionButton = {
                 if (showBottomBar && currentTabRoute == TrackerTab.Home.route) {
                     FabMenu(
@@ -439,7 +463,12 @@ fun TrackerScaffold() {
                 }
                 composable("voice_transaction") {
                     VoiceTransactionScreen(
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        onTransactionCreated = { creationResult ->
+                            pendingVoiceUndoEvent = creationResult
+                            navController.popBackStack(TrackerTab.Home.route, inclusive = false)
+                        },
+                        viewModel = voiceTransactionViewModel
                     )
                 }
                 composable(
