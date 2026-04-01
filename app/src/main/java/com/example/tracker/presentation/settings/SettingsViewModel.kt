@@ -5,6 +5,7 @@ import android.content.Context
 import android.provider.Settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.tracker.data.preferences.ThemePreference
 import com.example.tracker.data.preferences.ThemePreferences
 import com.example.tracker.data.preferences.YapePreferences
 import com.example.tracker.domain.usecase.database.ResetDatabaseUseCase
@@ -22,6 +23,13 @@ class SettingsViewModel(
     private val resetDatabaseUseCase: ResetDatabaseUseCase,
     private val context: Context
 ) : ViewModel() {
+
+    val themePreference: StateFlow<ThemePreference> = themePreferences.themePreference
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ThemePreference.System
+        )
 
     val isDarkMode: StateFlow<Boolean> = themePreferences.isDarkMode
         .stateIn(
@@ -50,9 +58,9 @@ class SettingsViewModel(
         _yapeActive.value = isNotificationListenerEnabled(context)
     }
 
-    fun toggleTheme() {
+    fun setThemePreference(preference: ThemePreference) {
         viewModelScope.launch {
-            themePreferences.setDarkMode(!isDarkMode.value)
+            themePreferences.setThemePreference(preference)
         }
     }
 

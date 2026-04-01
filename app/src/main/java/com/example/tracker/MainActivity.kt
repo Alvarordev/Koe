@@ -32,8 +32,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val settingsViewModel: SettingsViewModel = koinViewModel()
-            val isDarkMode by settingsViewModel.isDarkMode.collectAsStateWithLifecycle()
-            TrackerTheme(darkTheme = isDarkMode) {
+            val themePreference by settingsViewModel.themePreference.collectAsStateWithLifecycle()
+            TrackerTheme(themePreference = themePreference) {
                 TrackerScaffold()
             }
         }
