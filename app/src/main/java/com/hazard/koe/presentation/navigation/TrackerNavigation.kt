@@ -197,7 +197,7 @@ fun TrackerScaffold() {
     }
 
     val fabOffsetY by animateDpAsState(
-        targetValue = if (snackbarVisible && showBottomBar && currentTabRoute == TrackerTab.Home.route) (-72).dp else 0.dp,
+        targetValue = if (snackbarVisible && showBottomBar && currentTabRoute == TrackerTab.Home.route) (-172).dp else -(100).dp,
         animationSpec = tween(300),
         label = "fab_snackbar_offset"
     )
@@ -205,18 +205,18 @@ fun TrackerScaffold() {
     SharedTransitionLayout {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
-            floatingActionButton = {
-                if (showBottomBar && currentTabRoute == TrackerTab.Home.route) {
-                    FabMenu(
-                        expanded = fabMenuExpanded,
-                        onExpandedChange = { fabMenuExpanded = it },
-                        navController = navController,
-                        onTransactionPress = { navController.navigate("add_transaction_amount") },
-                        onVoiceTransactionPress = { navController.navigate("voice_transaction") },
-                        extraOffsetY = fabOffsetY
-                    )
-                }
-            },
+//            floatingActionButton = {
+//                if (showBottomBar && currentTabRoute == TrackerTab.Home.route) {
+//                    FabMenu(
+//                        expanded = fabMenuExpanded,
+//                        onExpandedChange = { fabMenuExpanded = it },
+//                        navController = navController,
+//                        onTransactionPress = { navController.navigate("add_transaction_amount") },
+//                        onVoiceTransactionPress = { navController.navigate("voice_transaction") },
+//                        extraOffsetY = fabOffsetY
+//                    )
+//                }
+//            },
             bottomBar = {
                 if (showBottomBar) {
                     Column {
@@ -275,9 +275,6 @@ fun TrackerScaffold() {
         ) { innerPadding ->
 
             Box(modifier = Modifier.fillMaxSize()) {
-
-
-
             NavHost(
                 navController = navController,
                 startDestination = TrackerTab.Home.route,
@@ -635,39 +632,91 @@ fun TrackerScaffold() {
                     )
                 }
             }
-            AnimatedVisibility(
-                visible = fabMenuExpanded,
-                enter = fadeIn(tween(200)),
-                exit = fadeOut(tween(200))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5f))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { fabMenuExpanded = false }
-                )
-            }
+//            AnimatedVisibility(
+//                visible = fabMenuExpanded,
+//                enter = fadeIn(tween(200)),
+//                exit = fadeOut(tween(200))
+//            ) {
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .background(Color.Black.copy(alpha = 0.5f))
+//                        .clickable(
+//                            interactionSource = remember { MutableInteractionSource() },
+//                            indication = null
+//                        ) { fabMenuExpanded = false }
+//                )
+//            }
 
-            if (showBottomBar) {
-                val event = pendingVoiceUndoEvent
-                VoiceTransactionSnackbar(
-                    visible = event != null,
-                    message = event?.message.orEmpty(),
-                    onUndo = {
-                        pendingVoiceUndoEvent = null
-                        voiceTransactionViewModel.undoLastCreatedTransaction()
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = innerPadding.calculateBottomPadding() + 8.dp)
-                )
-            }
+//            if (showBottomBar) {
+//                val event = pendingVoiceUndoEvent
+//                VoiceTransactionSnackbar(
+//                    visible = event != null,
+//                    message = event?.message.orEmpty(),
+//                    onUndo = {
+//                        pendingVoiceUndoEvent = null
+//                        voiceTransactionViewModel.undoLastCreatedTransaction()
+//                    },
+//                    modifier = Modifier
+//                        .align(Alignment.BottomCenter)
+//                        .padding(bottom = innerPadding.calculateBottomPadding() + 8.dp)
+//                )
+//            }
             }
         }
 
+        AnimatedVisibility(
+            visible = fabMenuExpanded,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { fabMenuExpanded = false }
+            )
+        }
+
+        // CAPA 3: El FAB y el Snackbar
+        // Los posicionamos manualmente al fondo de la pantalla
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 16.dp, end = 16.dp), // Ajusta según el diseño
+            contentAlignment = Alignment.BottomEnd
+        ) {
+            Column(horizontalAlignment = Alignment.End) {
+                // Snackbar si es necesario
+                if (showBottomBar) {
+                    val event = pendingVoiceUndoEvent
+                    VoiceTransactionSnackbar(
+                        visible = event != null,
+                        message = event?.message.orEmpty(),
+                        onUndo = {
+                            pendingVoiceUndoEvent = null
+                            voiceTransactionViewModel.undoLastCreatedTransaction()
+                        },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
+                // El FAB Menu (por encima del Scrim)
+                if (showBottomBar && currentTabRoute == TrackerTab.Home.route) {
+                    FabMenu(
+                        expanded = fabMenuExpanded,
+                        onExpandedChange = { fabMenuExpanded = it },
+                        navController = navController,
+                        onTransactionPress = { navController.navigate("add_transaction_amount") },
+                        onVoiceTransactionPress = { navController.navigate("voice_transaction") },
+                        extraOffsetY = fabOffsetY
+                    )
+                }
+            }
+        }
 
 
         if (showAddCategorySheet || editCategoryId != null) {
@@ -687,7 +736,5 @@ fun TrackerScaffold() {
                 onDismiss = { showDescriptionSheet = false }
             )
         }
-
-
     }
 }

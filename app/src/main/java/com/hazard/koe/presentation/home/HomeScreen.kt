@@ -107,7 +107,7 @@ fun HomeScreen(
                 Icon(
                     imageVector = Icons.Outlined.Map,
                     contentDescription = "Mapa de transacciones",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -123,14 +123,14 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = uiState.dateFilterMode.label(),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )
                     Icon(
                         painter = painterResource(R.drawable.nav_arrow_down),
                         contentDescription = "arrow-down",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -143,7 +143,7 @@ fun HomeScreen(
                 Icon(
                     imageVector = Icons.Outlined.FilterList,
                     contentDescription = "Filtros",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
         }

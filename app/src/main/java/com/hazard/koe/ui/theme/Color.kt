@@ -9,7 +9,7 @@ val SurfaceLight = Color(0xFFF8F9FA)
 val BackgroundLight = Color(0xFFFFFFFF)
 val OnSurfaceLight = Color(0xFF221F23)
 val OnSurfaceVariantLight = Color(0xFFa19fa0)
-val SurfaceVariantLight = Color(0xFFF0F1F3)
+val SurfaceVariantLight = Color(0xFFBBB8B9)
 val OutlineLight = Color(0xFFE0E0E0)
 val OutlineVariantLight = Color(0xFFF0F0F0)
 
