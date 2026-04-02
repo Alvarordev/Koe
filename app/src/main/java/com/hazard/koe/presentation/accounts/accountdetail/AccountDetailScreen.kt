@@ -148,30 +148,73 @@ fun AccountDetailScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        AccountCard(
-                            account = account,
-                            cardHeight = 60.dp,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            AccountCard(
+                                account = account,
+                                cardHeight = 56.dp,
+                            )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                            Box {
+                                var menuExpanded by remember { mutableStateOf(false) }
+
+                                IconButton(onClick = { menuExpanded = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreHoriz,
+                                        contentDescription = "Opciones"
+                                    )
+                                }
+
+                                DropdownMenu(
+                                    expanded = menuExpanded,
+                                    onDismissRequest = { menuExpanded = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Editar") },
+                                        onClick = {
+                                            menuExpanded = false
+                                            onEditAccount(accountId)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                "Eliminar",
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        },
+                                        onClick = {
+                                            menuExpanded = false
+                                            viewModel.showDeleteDialog()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
 
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalAlignment = Alignment.Bottom,
                         ) {
-                            Column {
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
                                 Text(
                                     text = account.name,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 23.sp,
+                                    fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
-                                Spacer(Modifier.height(4.dp))
+                                Spacer(Modifier.height(6.dp))
                                 if (balanceLabel != null) {
                                     Text(
                                         text = balanceLabel,
@@ -184,8 +227,8 @@ fun AccountDetailScreen(
                                         displayBalance,
                                         account.currencyCode
                                     ),
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
@@ -197,41 +240,7 @@ fun AccountDetailScreen(
                         }
                     }
 
-                    Box {
-                        var menuExpanded by remember { mutableStateOf(false) }
 
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                imageVector = Icons.Default.MoreHoriz,
-                                contentDescription = "Opciones"
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Editar") },
-                                onClick = {
-                                    menuExpanded = false
-                                    onEditAccount(accountId)
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        "Eliminar",
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    viewModel.showDeleteDialog()
-                                }
-                            )
-                        }
-                    }
                 }
             }
 
@@ -288,7 +297,7 @@ fun AccountDetailScreen(
                     item(key = "date_$date") {
                         DaySeparator(
                             date = date,
-                            modifier = Modifier.padding(horizontal = 20.dp)
+                            modifier = Modifier.padding(horizontal = 24.dp)
                         )
                     }
 
@@ -298,7 +307,7 @@ fun AccountDetailScreen(
                     ) { transaction ->
                         TransactionRow(
                             transaction = transaction,
-                            modifier = Modifier.padding(horizontal = 20.dp)
+                            modifier = Modifier.padding(horizontal = 24.dp)
                         )
                     }
                 }
