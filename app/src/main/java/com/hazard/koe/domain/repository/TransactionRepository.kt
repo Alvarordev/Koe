@@ -6,6 +6,7 @@ import com.hazard.koe.data.model.relations.CategoryIdSummary
 import com.hazard.koe.data.model.relations.CategorySummary
 import com.hazard.koe.data.model.relations.CategoryTotal
 import com.hazard.koe.data.model.relations.TransactionWithDetails
+import com.hazard.koe.data.model.relations.TransactionWithMapData
 import kotlinx.coroutines.flow.Flow
 
 interface TransactionRepository {
@@ -23,4 +24,5 @@ interface TransactionRepository {
     suspend fun delete(transaction: Transaction)
     suspend fun getLastBySubscriptionId(subscriptionId: Long): Transaction?
     suspend fun deleteFutureBySubscriptionId(subscriptionId: Long, afterDate: Long)
+    fun getTransactionsWithCoordinatesByMonth(startMs: Long, endMs: Long): Flow<List<TransactionWithMapData>>
 }

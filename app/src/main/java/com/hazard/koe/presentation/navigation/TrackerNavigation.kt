@@ -63,6 +63,7 @@ import com.hazard.koe.presentation.categories.CategoriesViewModel
 import com.hazard.koe.presentation.categories.addcategory.AddEditCategorySheet
 import com.hazard.koe.presentation.components.FabMenu
 import com.hazard.koe.presentation.home.HomeScreen
+import com.hazard.koe.presentation.transactionmap.TransactionMapScreen
 import com.hazard.koe.presentation.loans.AddLoanScreen
 import com.hazard.koe.presentation.loans.AddLoanViewModel
 import com.hazard.koe.presentation.settings.SettingsScreen
@@ -160,7 +161,8 @@ fun TrackerScaffold() {
             "add_transaction",
             "voice_transaction",
             "subscription_picker",
-            "subscription_detail"
+            "subscription_detail",
+            "transaction_map"
         )
         suppressedPrefixes.none { prefix -> route.startsWith(prefix) }
     } ?: true
@@ -303,8 +305,12 @@ fun TrackerScaffold() {
                         onEditTransaction = { transactionId ->
                             addViewModel.loadTransactionById(transactionId)
                             navController.navigate("add_transaction_amount")
-                        }
+                        },
+                        onNavigateToMap = { navController.navigate("transaction_map") }
                     )
+                }
+                composable("transaction_map") {
+                    TransactionMapScreen(onBack = { navController.popBackStack() })
                 }
                 composable(TrackerTab.Accounts.route) {
                     AccountsScreen(

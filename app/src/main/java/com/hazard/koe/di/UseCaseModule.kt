@@ -37,6 +37,7 @@ import com.hazard.koe.domain.usecase.subscription.ProcessSubscriptionBillingUseC
 import com.hazard.koe.domain.usecase.subscription.SaveSubscriptionUseCase
 import com.hazard.koe.domain.usecase.transaction.GetTotalByTypeInPeriodUseCase
 import com.hazard.koe.domain.usecase.transaction.GetTransactionsUseCase
+import com.hazard.koe.domain.usecase.transaction.GetTransactionsWithCoordinatesByMonthUseCase
 import com.hazard.koe.domain.usecase.database.ResetDatabaseUseCase
 import com.hazard.koe.domain.usecase.loan.SaveCasualLoanUseCase
 import com.hazard.koe.domain.usecase.loan.SaveFormalLoanUseCase
@@ -58,6 +59,7 @@ val useCaseModule = module {
     factory { GetExpensesByCategoryUseCase(get()) }
     factory { GetAllCategorySummariesUseCase(get()) }
     factory { GetTotalByTypeInPeriodUseCase(get()) }
+    factory { GetTransactionsWithCoordinatesByMonthUseCase(get()) }
 
     // Account
     factory { GetAccountsUseCase(get()) }

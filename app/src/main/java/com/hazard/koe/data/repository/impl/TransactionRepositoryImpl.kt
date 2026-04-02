@@ -9,6 +9,7 @@ import com.hazard.koe.data.model.relations.CategoryIdSummary
 import com.hazard.koe.data.model.relations.CategorySummary
 import com.hazard.koe.data.model.relations.CategoryTotal
 import com.hazard.koe.data.model.relations.TransactionWithDetails
+import com.hazard.koe.data.model.relations.TransactionWithMapData
 import com.hazard.koe.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -102,4 +103,7 @@ class TransactionRepositoryImpl(
 
     override suspend fun deleteFutureBySubscriptionId(subscriptionId: Long, afterDate: Long) =
         transactionDao.deleteFutureBySubscriptionId(subscriptionId, afterDate)
+
+    override fun getTransactionsWithCoordinatesByMonth(startMs: Long, endMs: Long): Flow<List<TransactionWithMapData>> =
+        transactionDao.getTransactionsWithCoordinatesByMonth(startMs, endMs)
 }

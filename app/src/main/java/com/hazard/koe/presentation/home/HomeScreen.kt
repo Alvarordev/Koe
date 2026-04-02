@@ -18,7 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
@@ -48,6 +51,7 @@ import org.koin.androidx.compose.koinViewModel
 fun HomeScreen(
     contentPadding: PaddingValues = PaddingValues(),
     onEditTransaction: (Long) -> Unit = {},
+    onNavigateToMap: () -> Unit = {},
     viewModel: HomeViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -69,28 +73,49 @@ fun HomeScreen(
             .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        TextButton(
-            onClick = viewModel::onToggleDateFilterDialog,
-            modifier = Modifier.heightIn(min = 24.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            Spacer(Modifier.size(40.dp))
+
+            TextButton(
+                onClick = viewModel::onToggleDateFilterDialog,
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 24.dp)
             ) {
-                Text(
-                    text = uiState.dateFilterMode.label(),
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = uiState.dateFilterMode.label(),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.nav_arrow_down),
+                        contentDescription = "arrow-down",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = onNavigateToMap,
+                modifier = Modifier.size(40.dp)
+            ) {
                 Icon(
-                    painter = painterResource(R.drawable.nav_arrow_down),
-                    contentDescription = "arrow-down",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
+                    imageVector = Icons.Outlined.Map,
+                    contentDescription = "Mapa de transacciones",
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
-    }
+        }
 
         Spacer(Modifier.height(12.dp))
 

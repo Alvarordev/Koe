@@ -13,6 +13,7 @@ import com.hazard.koe.data.model.relations.CategoryIdSummary
 import com.hazard.koe.data.model.relations.CategorySummary
 import com.hazard.koe.data.model.relations.CategoryTotal
 import com.hazard.koe.data.model.relations.TransactionWithDetails
+import com.hazard.koe.data.model.relations.TransactionWithMapData
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -75,6 +76,16 @@ interface TransactionDao {
 
     @Query("DELETE FROM transactions WHERE subscriptionId = :subscriptionId AND date > :afterDate")
     suspend fun deleteFutureBySubscriptionId(subscriptionId: Long, afterDate: Long)
+
+    @Query("""
+        SELECT t.id, t.amount, t.date, t.latitude, t.longitude,
+               c.emoji AS categoryEmoji, c.color AS categoryColor, c.name AS categoryName
+        FROM transactions t
+        INNER JOIN categories c ON t.categoryId = c.id
+        WHERE t.date >= :startMs AND t.date < :endMs
+        AND t.latitude IS NOT NULL AND t.longitude IS NOT NULL
+    """)
+    fun getTransactionsWithCoordinatesByMonth(startMs: Long, endMs: Long): Flow<List<TransactionWithMapData>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(transaction: Transaction): Long

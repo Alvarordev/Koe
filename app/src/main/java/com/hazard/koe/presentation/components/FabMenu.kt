@@ -72,7 +72,7 @@ fun FabMenu(
                 navController.navigate("transfer_source")
             },
             icon = { Icon(Icons.Default.SwapVert, contentDescription = null) },
-            text = { Text("Trasnferencia") },
+            text = { Text("Transferencia") },
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.background
         )
