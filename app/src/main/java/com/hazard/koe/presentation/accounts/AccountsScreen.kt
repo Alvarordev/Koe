@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -26,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hazard.koe.R
 import com.hazard.koe.presentation.accounts.components.AccountsCarousel
+import com.hazard.koe.presentation.accounts.components.UpcomingPaymentsCard
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -41,6 +44,7 @@ fun AccountsScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = statusBarPadding.calculateTopPadding())
+            .verticalScroll(rememberScrollState())
     ) {
         Row(
             modifier = Modifier
@@ -59,17 +63,35 @@ fun AccountsScreen(
                 Icon(
                     painter = painterResource(R.drawable.plus),
                     modifier = Modifier
-                        .size(24.dp),
+                        .size(26.dp),
                     contentDescription = "Agregar cuenta"
                 )
             }
         }
 
-        Spacer(Modifier.height(12.dp))
-
         AccountsCarousel(
             accounts = uiState.accounts,
             onAccountClick = onAccountClick,
         )
+
+        if (uiState.upcomingItems.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
+
+            Text(
+                text = "Proximos Pagos",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            UpcomingPaymentsCard(
+                items = uiState.upcomingItems,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(Modifier.height(16.dp))
+        }
     }
 }

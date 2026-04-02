@@ -1,7 +1,6 @@
 package com.hazard.koe.presentation.accounts.addaccount
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -26,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -71,6 +71,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
@@ -87,18 +88,8 @@ import com.hazard.koe.data.enums.CardNetwork
 import com.hazard.koe.data.enums.SupportedCurrency
 import com.hazard.koe.presentation.accounts.components.AccountCard
 import org.koin.androidx.compose.koinViewModel
-
-private val editColorPalette = listOf(
-    "#4679FB", "#FA0D5E", "#FB6A3C", "#04C454",
-    "#6446FB", "#FB4141", "#FBC728", "#37FBFB", "#A9FB37"
-)
-
-private val wizardColorPalette = listOf(
-    "#FF1744", "#E91E63", "#D500F9", "#B388FF", "#651FFF",
-    "#2979FF", "#00B0FF", "#00E5FF", "#1DE9B6", "#00E676",
-    "#76FF03", "#C6FF00", "#FFD600", "#FFAB00", "#FF6D00",
-    "#FF3D00", "#8D6E63", "#78909C", "#37474F", "#212121"
-)
+import androidx.compose.runtime.collectAsState
+import com.hazard.koe.presentation.util.ColorPalette
 
 private fun parseColor(hex: String): Color = runCatching {
     Color(hex.toColorInt())
@@ -370,28 +361,38 @@ private fun WizardStepIndicator(
         horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val displaySteps = totalSteps
-        for (i in 1..displaySteps) {
+        val minWidth = 20.dp
+        val maxWidth = 40.dp
+
+        for (i in 1..totalSteps) {
             val isCurrent = i == currentStep
-            val isCompleted = i < currentStep
-            val color = when {
-                isCurrent -> MaterialTheme.colorScheme.primary
-                isCompleted -> MaterialTheme.colorScheme.outlineVariant
-                else -> MaterialTheme.colorScheme.outlineVariant
+
+            val color = if (isCurrent) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.outlineVariant
             }
-            val targetWidth = if (isCurrent) 40.dp else 20.dp
+
             val animatedWidth by animateDpAsState(
-                targetValue = targetWidth,
-                animationSpec = tween(durationMillis = 300),
-                label = "step_width_$i"
+                targetValue = if (isCurrent) maxWidth else minWidth,
+                animationSpec = tween(300),
+                label = "container_width_$i"
             )
+
             Box(
                 modifier = Modifier
-                    .width(animatedWidth)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(color)
-            )
+                    .width(animatedWidth) // 🔥 layout dinámico
+                    .height(4.dp),
+                contentAlignment = Alignment.Center // 🔥 clave
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth() // ocupa todo el contenedor
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(color)
+                )
+            }
         }
     }
 }
@@ -894,7 +895,7 @@ private fun WizardStepColor(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            items(wizardColorPalette) { hex ->
+            items(ColorPalette) { hex ->
                 val isSelected = selectedColor == hex
                 Box(
                     modifier = Modifier
@@ -939,8 +940,8 @@ private fun WizardStepConfirmation(
     modifier: Modifier = Modifier
 ) {
     val previewAccount = remember(
-        viewModel.uiState.value.formState,
-        viewModel.uiState.value.selectedType
+        viewModel.uiState.collectAsState().value.formState,
+        viewModel.uiState.collectAsState().value.selectedType
     ) {
         viewModel.buildPreviewAccount()
     }
@@ -1168,12 +1169,14 @@ private fun EditCommonFields(
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
-    Row(
+
+    LazyRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        editColorPalette.forEach { hex ->
+        items(ColorPalette) { hex ->
             val selected = formState.color == hex
+
             Box(
                 modifier = Modifier
                     .size(36.dp)

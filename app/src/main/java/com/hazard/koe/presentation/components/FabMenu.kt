@@ -4,6 +4,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.material.icons.Icons
@@ -24,8 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.hazard.koe.R
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -58,9 +61,11 @@ fun FabMenu(
                     label = "fab_rotation"
                 )
                 Icon(
-                    imageVector = Icons.Filled.Add,
+                    painter = painterResource(R.drawable.plus),
                     contentDescription = "Add",
-                    modifier = Modifier.graphicsLayer { rotationZ = rotation }
+                    modifier = Modifier
+                        .size(26.dp)
+                        .graphicsLayer { rotationZ = rotation }
                 )
             }
         }

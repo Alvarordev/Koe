@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.lazy.LazyColumn
@@ -87,7 +85,7 @@ fun CategoriesScreen(
                 Icon(
                     painter = painterResource(R.drawable.plus),
                     modifier = Modifier
-                        .size(24.dp),
+                        .size(26.dp),
                     contentDescription = "Añadir categoría"
                 )
             }

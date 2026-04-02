@@ -55,11 +55,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import java.util.UUID
 import androidx.core.graphics.toColorInt
-
-private val categoryColorPalette = listOf(
-    "#4679FB", "#FA0D5E", "#FB6A3C", "#04C454",
-    "#6446FB", "#FB4141", "#FBC728", "#37FBFB", "#A9FB37"
-)
+import com.hazard.koe.presentation.util.ColorPalette
 
 private fun parseColor(hex: String): Color = runCatching {
     Color(hex.toColorInt())
@@ -260,7 +256,7 @@ fun AddEditCategorySheet(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     overscrollEffect = null
                 ) {
-                    items(categoryColorPalette) { hex ->
+                    items(ColorPalette) { hex ->
                         val isSelected = uiState.color == hex
                         Box(
                             modifier = Modifier
