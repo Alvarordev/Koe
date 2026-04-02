@@ -5,6 +5,7 @@ import com.hazard.koe.domain.repository.BudgetRepository
 import com.hazard.koe.domain.repository.CasualLoanRepository
 import com.hazard.koe.domain.repository.CategoryRepository
 import com.hazard.koe.domain.repository.FormalLoanRepository
+import com.hazard.koe.domain.repository.HomePreferencesRepository
 import com.hazard.koe.domain.repository.PersonRepository
 import com.hazard.koe.domain.repository.RecurringRuleRepository
 import com.hazard.koe.domain.repository.SubscriptionServiceRepository
@@ -17,6 +18,7 @@ import com.hazard.koe.data.repository.impl.BudgetRepositoryImpl
 import com.hazard.koe.data.repository.impl.CasualLoanRepositoryImpl
 import com.hazard.koe.data.repository.impl.CategoryRepositoryImpl
 import com.hazard.koe.data.repository.impl.FormalLoanRepositoryImpl
+import com.hazard.koe.data.repository.impl.HomePreferencesRepositoryImpl
 import com.hazard.koe.data.repository.impl.PersonRepositoryImpl
 import com.hazard.koe.data.repository.impl.RecurringRuleRepositoryImpl
 import com.hazard.koe.data.repository.impl.SubscriptionServiceRepositoryImpl
@@ -37,6 +39,7 @@ val repositoryModule = module {
     single<PersonRepository> { PersonRepositoryImpl(get()) }
     single<FormalLoanRepository> { FormalLoanRepositoryImpl(get(), get(), get()) }
     single<UserSubscriptionRepository> { UserSubscriptionRepositoryImpl(get()) }
+    single<HomePreferencesRepository> { HomePreferencesRepositoryImpl(get()) }
     single<VoiceTransactionInferenceRepository> { FirebaseAiVoiceTransactionInferenceRepositoryImpl() }
     single<VoiceTransactionSettingsRepository> { VoiceTransactionSettingsRepositoryImpl(get()) }
 }

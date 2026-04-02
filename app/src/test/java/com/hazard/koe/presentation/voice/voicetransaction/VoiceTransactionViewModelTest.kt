@@ -11,6 +11,7 @@ import com.hazard.koe.data.model.relations.CategorySummary
 import com.hazard.koe.data.model.relations.CategoryTotal
 import com.hazard.koe.data.model.relations.CurrencyBalance
 import com.hazard.koe.data.model.relations.TransactionWithDetails
+import com.hazard.koe.data.model.relations.TransactionWithMapData
 import com.hazard.koe.data.voice.RecordedVoiceAudio
 import com.hazard.koe.data.voice.VoiceAudioRecorder
 import com.hazard.koe.domain.model.VoiceTransactionInferenceRequest
@@ -349,4 +350,9 @@ private class FakeTransactionRepository : TransactionRepository {
     override suspend fun getLastBySubscriptionId(subscriptionId: Long): Transaction? = null
 
     override suspend fun deleteFutureBySubscriptionId(subscriptionId: Long, afterDate: Long) = Unit
+
+    override fun getTransactionsWithCoordinatesByMonth(
+        startMs: Long,
+        endMs: Long
+    ): Flow<List<TransactionWithMapData>> = flowOf(emptyList())
 }

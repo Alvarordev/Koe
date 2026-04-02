@@ -1,5 +1,6 @@
 package com.hazard.koe.presentation.home
 
+import com.hazard.koe.domain.model.HomeDateFilterPreset
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
@@ -8,6 +9,14 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 sealed interface DateFilterMode {
+
+    fun toPersistablePresetOrNull(): HomeDateFilterPreset? = when (this) {
+        is Today -> HomeDateFilterPreset.TODAY
+        is Week -> HomeDateFilterPreset.WEEK
+        is Month -> HomeDateFilterPreset.MONTH
+        is SpecificDate,
+        is DateRange -> null
+    }
 
     fun dateRange(): Pair<Long, Long> {
         val zone = ZoneId.systemDefault()
@@ -81,4 +90,12 @@ sealed interface DateFilterMode {
     data object Month : DateFilterMode
     data class SpecificDate(val date: LocalDate) : DateFilterMode
     data class DateRange(val start: LocalDate, val end: LocalDate) : DateFilterMode
+
+    companion object {
+        fun fromPreset(preset: HomeDateFilterPreset): DateFilterMode = when (preset) {
+            HomeDateFilterPreset.TODAY -> Today
+            HomeDateFilterPreset.WEEK -> Week
+            HomeDateFilterPreset.MONTH -> Month
+        }
+    }
 }

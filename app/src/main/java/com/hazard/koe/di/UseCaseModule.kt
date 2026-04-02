@@ -17,6 +17,8 @@ import com.hazard.koe.domain.usecase.category.GetTransferCategoryUseCase
 import com.hazard.koe.domain.usecase.category.UpdateCategoryUseCase
 import com.hazard.koe.domain.usecase.loan.GetCasualLoansUseCase
 import com.hazard.koe.domain.usecase.loan.GetFormalLoansUseCase
+import com.hazard.koe.domain.usecase.home.ObserveHomeDateFilterPresetUseCase
+import com.hazard.koe.domain.usecase.home.SaveHomeDateFilterPresetUseCase
 import com.hazard.koe.domain.usecase.person.GetPersonsUseCase
 import com.hazard.koe.domain.usecase.recurring.GetRecurringRulesUseCase
 import com.hazard.koe.domain.usecase.recurring.GetSubscriptionRulesUseCase
@@ -111,6 +113,10 @@ val useCaseModule = module {
     // Voice
     factory { InferTransactionFromVoiceUseCase(get()) }
     factory { ObserveVoiceLocationSettingUseCase(get()) }
+
+    // Home
+    factory { ObserveHomeDateFilterPresetUseCase(get()) }
+    factory { SaveHomeDateFilterPresetUseCase(get()) }
 
     // Database
     factory { ResetDatabaseUseCase(get()) }

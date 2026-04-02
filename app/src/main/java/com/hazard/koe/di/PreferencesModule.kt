@@ -1,6 +1,7 @@
 package com.hazard.koe.di
 
 import com.hazard.koe.data.preferences.ExchangeRatePreferences
+import com.hazard.koe.data.preferences.HomePreferences
 import com.hazard.koe.data.preferences.ThemePreferences
 import com.hazard.koe.data.preferences.YapePreferences
 import com.hazard.koe.data.ocr.YapeImageOcrProcessor
@@ -13,6 +14,7 @@ import org.koin.dsl.module
 
 val preferencesModule = module {
     single { ThemePreferences(androidContext()) }
+    single { HomePreferences(androidContext()) }
     single { YapePreferences(androidContext()) }
     single { YapeNotificationParser() }
     single { YapeImageOcrProcessor(androidContext()) }

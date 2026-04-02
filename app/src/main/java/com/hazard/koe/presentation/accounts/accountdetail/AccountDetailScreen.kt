@@ -8,12 +8,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -30,9 +31,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -59,10 +61,26 @@ fun AccountDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val account = uiState.account
-    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val topInsetPadding = maxOf(statusBarPadding, contentPadding.calculateTopPadding())
-    val bottomInsetPadding = maxOf(contentPadding.calculateBottomPadding(), navigationBarPadding)
+    val layoutDirection = LocalLayoutDirection.current
+    val safeDrawingPadding = WindowInsets.safeDrawing.asPaddingValues()
+    val rootPadding = PaddingValues(
+        start = maxOf(
+            safeDrawingPadding.calculateStartPadding(layoutDirection),
+            contentPadding.calculateStartPadding(layoutDirection)
+        ),
+        top = maxOf(
+            safeDrawingPadding.calculateTopPadding(),
+            contentPadding.calculateTopPadding()
+        ),
+        end = maxOf(
+            safeDrawingPadding.calculateEndPadding(layoutDirection),
+            contentPadding.calculateEndPadding(layoutDirection)
+        ),
+        bottom = maxOf(
+            safeDrawingPadding.calculateBottomPadding(),
+            contentPadding.calculateBottomPadding()
+        )
+    )
 
     LaunchedEffect(uiState.isArchived) {
         if (uiState.isArchived) onNavigateBack()
@@ -89,10 +107,11 @@ fun AccountDetailScreen(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(rootPadding),
         contentPadding = PaddingValues(
-            top = topInsetPadding,
-            bottom = bottomInsetPadding + 16.dp
+            bottom = 16.dp
         )
     ) {
         item {

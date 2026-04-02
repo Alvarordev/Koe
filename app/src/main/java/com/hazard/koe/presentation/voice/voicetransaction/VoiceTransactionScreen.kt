@@ -54,8 +54,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -339,6 +341,7 @@ private fun RecordButton(
     val isRecording = phase == VoiceTransactionPhase.RECORDING
     val isProcessing = phase == VoiceTransactionPhase.PROCESSING || isSubmitting
     val primaryColor = MaterialTheme.colorScheme.primary
+    val haptic = LocalHapticFeedback.current
 
     val progressFraction by animateFloatAsState(
         targetValue = if (isRecording) {
@@ -372,10 +375,10 @@ private fun RecordButton(
 
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.size(100.dp)
+        modifier = Modifier.size(150.dp)
     ) {
         if (isRecording) {
-            Canvas(modifier = Modifier.size((80 * pulseScale).dp)) {
+            Canvas(modifier = Modifier.size((120 * pulseScale).dp)) {
                 drawCircle(
                     color = primaryColor.copy(alpha = pulseAlpha),
                     radius = size.minDimension / 2f
@@ -384,7 +387,7 @@ private fun RecordButton(
         }
 
         if (isRecording) {
-            Canvas(modifier = Modifier.size(80.dp)) {
+            Canvas(modifier = Modifier.size(120.dp)) {
                 drawArc(
                     color = primaryColor.copy(alpha = 0.3f),
                     startAngle = -90f,
@@ -394,7 +397,7 @@ private fun RecordButton(
                 )
                 drawArc(
                     color = primaryColor,
-                    startAngle = -90f,
+                    startAngle = -90f + 360f * (1f - progressFraction),
                     sweepAngle = 360f * progressFraction,
                     useCenter = false,
                     style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
@@ -404,7 +407,7 @@ private fun RecordButton(
 
         if (isProcessing) {
             CircularProgressIndicator(
-                modifier = Modifier.size(80.dp),
+                modifier = Modifier.size(120.dp),
                 color = primaryColor,
                 trackColor = primaryColor.copy(alpha = 0.15f),
                 strokeWidth = 3.dp
@@ -412,8 +415,11 @@ private fun RecordButton(
         }
 
         FilledIconButton(
-            onClick = onClick,
-            modifier = Modifier.size(64.dp),
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            },
+            modifier = Modifier.size(96.dp),
             shape = CircleShape,
             enabled = !isProcessing
         ) {
@@ -426,13 +432,13 @@ private fun RecordButton(
                     Icon(
                         imageVector = Icons.Default.Stop,
                         contentDescription = "Detener",
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(42.dp)
                     )
                 } else {
                     Icon(
                         imageVector = Icons.Default.Mic,
                         contentDescription = "Grabar",
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(42.dp)
                     )
                 }
             }

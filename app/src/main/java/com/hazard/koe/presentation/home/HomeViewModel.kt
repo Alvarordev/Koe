@@ -6,6 +6,8 @@ import com.hazard.koe.data.enums.TransactionType
 import com.hazard.koe.data.model.Transaction
 import com.hazard.koe.data.model.relations.TransactionWithDetails
 import com.hazard.koe.domain.usecase.account.GetTotalAccountBalanceUseCase
+import com.hazard.koe.domain.usecase.home.ObserveHomeDateFilterPresetUseCase
+import com.hazard.koe.domain.usecase.home.SaveHomeDateFilterPresetUseCase
 import com.hazard.koe.domain.usecase.transaction.DeleteTransactionUseCase
 import com.hazard.koe.domain.usecase.transaction.GetTotalByTypeInPeriodUseCase
 import com.hazard.koe.domain.usecase.transaction.GetTransactionsByDateRangeUseCase
@@ -40,11 +42,21 @@ class HomeViewModel(
     getTransactionsByDateRange: GetTransactionsByDateRangeUseCase,
     getTotalByTypeInPeriod: GetTotalByTypeInPeriodUseCase,
     getTotalAccountBalance: GetTotalAccountBalanceUseCase,
-    private val deleteTransactionUseCase: DeleteTransactionUseCase
+    private val deleteTransactionUseCase: DeleteTransactionUseCase,
+    observeHomeDateFilterPreset: ObserveHomeDateFilterPresetUseCase,
+    private val saveHomeDateFilterPreset: SaveHomeDateFilterPresetUseCase
 ) : ViewModel() {
 
     private val _dateFilterMode = MutableStateFlow<DateFilterMode>(DateFilterMode.Month)
     private val _showDateFilterDialog = MutableStateFlow(false)
+
+    init {
+        viewModelScope.launch {
+            observeHomeDateFilterPreset().collect { preset ->
+                _dateFilterMode.value = DateFilterMode.fromPreset(preset)
+            }
+        }
+    }
 
     val uiState: StateFlow<HomeUiState> = _dateFilterMode
         .flatMapLatest { mode ->
@@ -81,6 +93,11 @@ class HomeViewModel(
     fun onDateFilterSelected(mode: DateFilterMode) {
         _dateFilterMode.value = mode
         _showDateFilterDialog.value = false
+        mode.toPersistablePresetOrNull()?.let { preset ->
+            viewModelScope.launch {
+                saveHomeDateFilterPreset(preset)
+            }
+        }
     }
 
     fun onToggleDateFilterDialog() {
