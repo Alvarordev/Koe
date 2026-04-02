@@ -1,6 +1,7 @@
 package com.hazard.koe.di
 
 import com.hazard.koe.domain.usecase.account.ArchiveAccountUseCase
+import com.hazard.koe.domain.usecase.account.CalculateCreditCardBillingCycleUseCase
 import com.hazard.koe.domain.usecase.account.CreateAccountUseCase
 import com.hazard.koe.domain.usecase.account.GetAccountByIdUseCase
 import com.hazard.koe.domain.usecase.account.GetAccountsUseCase
@@ -72,6 +73,7 @@ val useCaseModule = module {
     factory { UpdateAccountUseCase(get()) }
     factory { GetBalanceHistoryUseCase(get(), get()) }
     factory { GetTotalAccountBalanceUseCase(get(), get()) }
+    factory { CalculateCreditCardBillingCycleUseCase() }
 
     // Category
     factory { GetCategoriesUseCase(get()) }

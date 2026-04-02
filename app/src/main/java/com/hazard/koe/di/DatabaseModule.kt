@@ -14,7 +14,7 @@ val databaseModule = module {
             "tracker_database"
         )
             .addCallback(DatabaseSeeder())
-            .addMigrations(TrackerDatabase.MIGRATION_1_2, TrackerDatabase.MIGRATION_2_3, TrackerDatabase.MIGRATION_3_4, TrackerDatabase.MIGRATION_4_5, TrackerDatabase.MIGRATION_5_6)
+            .addMigrations(TrackerDatabase.MIGRATION_1_2, TrackerDatabase.MIGRATION_2_3, TrackerDatabase.MIGRATION_3_4, TrackerDatabase.MIGRATION_4_5, TrackerDatabase.MIGRATION_5_6, TrackerDatabase.MIGRATION_6_7)
             .fallbackToDestructiveMigration(true)
             .build()
     }

@@ -35,6 +35,7 @@ sealed class AddAccountFormState {
         val lastFourDigits: String = "",
         val expirationDate: String = "",
         val paymentDay: String = "",
+        val closingDay: String = "",
         val interestRate: String = ""
     ) : AddAccountFormState()
 

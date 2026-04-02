@@ -124,6 +124,7 @@ fun AddAccountScreen(
                 onLastFourDigitsChange = viewModel::updateLastFourDigits,
                 onExpirationDateChange = viewModel::updateExpirationDate,
                 onPaymentDayChange = viewModel::updatePaymentDay,
+                onClosingDayChange = viewModel::updateClosingDay,
                 onInterestRateChange = viewModel::updateInterestRate
             )
 
@@ -284,6 +285,7 @@ private fun TypeSpecificFields(
     onLastFourDigitsChange: (String) -> Unit,
     onExpirationDateChange: (String) -> Unit,
     onPaymentDayChange: (String) -> Unit,
+    onClosingDayChange: (String) -> Unit,
     onInterestRateChange: (String) -> Unit
 ) {
     when (formState) {
@@ -367,8 +369,19 @@ private fun TypeSpecificFields(
             OutlinedTextField(
                 value = formState.paymentDay,
                 onValueChange = onPaymentDayChange,
-                label = { Text("Payment Day (optional)") },
+                label = { Text("Día de vencimiento (payment day)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = formState.closingDay,
+                onValueChange = onClosingDayChange,
+                label = { Text("Día de cierre (opcional)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                supportingText = {
+                    Text("Si lo dejas vacío, se toma todo el mes calendario y vence al mes siguiente.")
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )

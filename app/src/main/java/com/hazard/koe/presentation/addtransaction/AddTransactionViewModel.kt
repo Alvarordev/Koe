@@ -13,6 +13,7 @@ import com.hazard.koe.data.model.Transaction
 import com.hazard.koe.data.preferences.ThemePreferences
 import com.hazard.koe.data.preferences.YapePreferences
 import com.hazard.koe.domain.exception.DuplicateTransactionException
+import com.hazard.koe.domain.exception.CreditLimitExceededException
 import com.hazard.koe.domain.repository.TransactionRepository
 import com.hazard.koe.domain.usecase.account.GetAccountsUseCase
 import com.hazard.koe.domain.usecase.category.GetCategoriesUseCase
@@ -334,7 +335,11 @@ class AddTransactionViewModel(
 
                 _uiState.update { it.copy(isSubmitting = false, submitSuccess = true) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isSubmitting = false, submitError = "Failed to save transaction") }
+                val error = when (e) {
+                    is CreditLimitExceededException -> "No disponible: excede el límite de crédito"
+                    else -> "Failed to save transaction"
+                }
+                _uiState.update { it.copy(isSubmitting = false, submitError = error) }
             }
         }
     }

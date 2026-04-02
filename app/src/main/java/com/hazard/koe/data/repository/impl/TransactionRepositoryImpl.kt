@@ -10,6 +10,7 @@ import com.hazard.koe.data.model.relations.CategorySummary
 import com.hazard.koe.data.model.relations.CategoryTotal
 import com.hazard.koe.data.model.relations.TransactionWithDetails
 import com.hazard.koe.data.model.relations.TransactionWithMapData
+import com.hazard.koe.domain.exception.CreditLimitExceededException
 import com.hazard.koe.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -45,6 +46,17 @@ class TransactionRepositoryImpl(
         transactionDao.getTotalByTypeInPeriod(type, start, end)
 
     override suspend fun create(transaction: Transaction): Long {
+        if (transaction.type == TransactionType.EXPENSE) {
+            val account = accountDao.getById(transaction.accountId).first()
+            if (account != null && account.type == AccountType.CREDIT) {
+                val newCreditUsed = (account.creditUsed ?: 0L) + transaction.amount
+                val creditLimit = account.creditLimit ?: 0L
+                if (newCreditUsed > creditLimit) {
+                    throw CreditLimitExceededException()
+                }
+            }
+        }
+
         val id = transactionDao.insert(transaction)
         when (transaction.type) {
             TransactionType.EXPENSE -> {

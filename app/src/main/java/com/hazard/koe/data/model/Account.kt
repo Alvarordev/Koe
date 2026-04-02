@@ -21,6 +21,7 @@ data class Account(
     val creditLimit: Long? = null,
     val creditUsed: Long? = null,
     val paymentDay: Int? = null,
+    val closingDay: Int? = null,
     val interestRate: Double? = null,
     val sortOrder: Int = 0,
     val isArchived: Boolean = false,

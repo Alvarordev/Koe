@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.hazard.koe.data.enums.AccountType
 import com.hazard.koe.data.enums.CardNetwork
 import com.hazard.koe.data.model.Account
+import com.hazard.koe.domain.exception.CreditLimitExceededException
 import com.hazard.koe.domain.usecase.account.CreateAccountUseCase
 import com.hazard.koe.domain.usecase.account.GetAccountByIdUseCase
 import com.hazard.koe.domain.usecase.account.UpdateAccountUseCase
@@ -59,6 +60,7 @@ class AddAccountViewModel(
                     lastFourDigits = account.lastFourDigits ?: "",
                     expirationDate = account.expirationDate ?: "",
                     paymentDay = account.paymentDay?.toString() ?: "",
+                    closingDay = account.closingDay?.toString() ?: "",
                     interestRate = account.interestRate?.let { "%.2f".format(it * 100) } ?: ""
                 )
                 AccountType.SAVINGS -> AddAccountFormState.SavingsFormState(
@@ -211,6 +213,15 @@ class AddAccountViewModel(
         }
     }
 
+    fun updateClosingDay(value: String) {
+        _uiState.update { state ->
+            state.copy(formState = when (val form = state.formState) {
+                is AddAccountFormState.CreditFormState -> form.copy(closingDay = value)
+                else -> form
+            })
+        }
+    }
+
     fun submit() {
         val state = _uiState.value
         val form = state.formState
@@ -290,6 +301,34 @@ class AddAccountViewModel(
                 val used = (form.creditUsed.toDoubleOrNull() ?: 0.0) * 100
                 val rate = form.interestRate.toDoubleOrNull()?.let { it / 100.0 }
                 val payDay = form.paymentDay.toIntOrNull()
+                val closeDay = form.closingDay.toIntOrNull()
+
+                if (form.paymentDay.isNotBlank() && payDay == null) {
+                    _uiState.update { it.copy(errorMessage = "Payment day must be a valid number") }
+                    return null
+                }
+                if (form.closingDay.isNotBlank() && closeDay == null) {
+                    _uiState.update { it.copy(errorMessage = "Closing day must be a valid number") }
+                    return null
+                }
+
+                if (payDay != null && payDay !in 1..31) {
+                    _uiState.update { it.copy(errorMessage = "Payment day must be between 1 and 31") }
+                    return null
+                }
+                if (closeDay != null && closeDay !in 1..31) {
+                    _uiState.update { it.copy(errorMessage = "Closing day must be between 1 and 31") }
+                    return null
+                }
+                if (used.toLong() < 0L) {
+                    _uiState.update { it.copy(errorMessage = "Credit used cannot be negative") }
+                    return null
+                }
+                if (used.toLong() > limit.toLong()) {
+                    _uiState.update { it.copy(errorMessage = CreditLimitExceededException().message) }
+                    return null
+                }
+
                 Account(
                     id = id,
                     name = form.name,
@@ -304,6 +343,7 @@ class AddAccountViewModel(
                     creditLimit = limit.toLong(),
                     creditUsed = used.toLong(),
                     paymentDay = payDay,
+                    closingDay = closeDay,
                     interestRate = rate,
                     sortOrder = sortOrder,
                     createdAt = createdAt
