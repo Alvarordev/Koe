@@ -16,6 +16,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+private const val LIMA_LAT = -12.0464
+private const val LIMA_LNG = -77.0428
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionMapViewModel(
     private val getTransactionsWithCoordinates: GetTransactionsWithCoordinatesByMonthUseCase
@@ -42,9 +45,15 @@ class TransactionMapViewModel(
         }
 
     val uiState = combine(clustersFlow, _selectedCluster) { (month, clusters), selectedCluster ->
+        val allPins = clusters.flatMap { it.pins }
+        val centerLat = allPins.map { it.lat }.average().takeUnless { it.isNaN() } ?: LIMA_LAT
+        val centerLng = allPins.map { it.lng }.average().takeUnless { it.isNaN() } ?: LIMA_LNG
+
         TransactionMapUiState(
             selectedMonth = month,
             clusters = clusters,
+            mapCenterLat = centerLat,
+            mapCenterLng = centerLng,
             selectedCluster = selectedCluster,
             isLoading = false
         )

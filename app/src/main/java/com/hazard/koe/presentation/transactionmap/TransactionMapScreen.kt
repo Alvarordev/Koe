@@ -4,7 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.view.View
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,9 +18,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,20 +31,22 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
@@ -49,7 +56,6 @@ import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MapColorScheme
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
@@ -61,8 +67,10 @@ import org.koin.androidx.compose.koinViewModel
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.abs
 
 private val limaLatLng = LatLng(-12.0464, -77.0428)
+private const val mapZoom = 11f
 
 private val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("es", "PE"))
 
@@ -145,114 +153,72 @@ fun TransactionMapScreen(
     val isDark = isSystemInDarkTheme()
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(limaLatLng, 5f)
+        position = CameraPosition.fromLatLngZoom(limaLatLng, mapZoom)
     }
 
-    LaunchedEffect(uiState.clusters) {
-        val clusters = uiState.clusters
-        when {
-            clusters.isEmpty() -> {
-                cameraPositionState.animate(
-                    CameraUpdateFactory.newLatLngZoom(limaLatLng, 5f)
-                )
-            }
-            clusters.size == 1 && clusters.first().pins.size == 1 -> {
-                cameraPositionState.animate(
-                    CameraUpdateFactory.newLatLngZoom(
-                        LatLng(clusters.first().lat, clusters.first().lng),
-                        15f
-                    )
-                )
-            }
-            else -> {
-                val builder = LatLngBounds.Builder()
-                clusters.forEach { cluster -> builder.include(LatLng(cluster.lat, cluster.lng)) }
-                cameraPositionState.animate(
-                    CameraUpdateFactory.newLatLngBounds(builder.build(), 160)
-                )
-            }
-        }
+    LaunchedEffect(uiState.mapCenterLat, uiState.mapCenterLng) {
+        cameraPositionState.animate(
+            CameraUpdateFactory.newLatLngZoom(
+                LatLng(uiState.mapCenterLat, uiState.mapCenterLng),
+                mapZoom
+            )
+        )
     }
 
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Mapa de gastos",
-                        fontWeight = FontWeight.SemiBold
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState,
+            uiSettings = MapUiSettings(
+                zoomControlsEnabled = false,
+                compassEnabled = false,
+                mapToolbarEnabled = false,
+                scrollGesturesEnabled = true,
+                zoomGesturesEnabled = true
+            ),
+            googleMapOptionsFactory = {
+                com.google.android.gms.maps.GoogleMapOptions()
+                    .mapColorScheme(
+                        if (isDark) MapColorScheme.DARK else MapColorScheme.LIGHT
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
-                        )
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            }
         ) {
-            MonthSelectorRow(
-                selectedMonth = uiState.selectedMonth,
-                onPreviousMonth = viewModel::previousMonth,
-                onNextMonth = viewModel::nextMonth
-            )
-
-            Box(modifier = Modifier.fillMaxSize()) {
-                GoogleMap(
-                    modifier = Modifier.fillMaxSize(),
-                    cameraPositionState = cameraPositionState,
-                    uiSettings = MapUiSettings(
-                        zoomControlsEnabled = false,
-                        compassEnabled = false,
-                        mapToolbarEnabled = false,
-                        scrollGesturesEnabled = true,
-                        zoomGesturesEnabled = true
-                    ),
-                    googleMapOptionsFactory = {
-                        com.google.android.gms.maps.GoogleMapOptions()
-                            .mapColorScheme(
-                                if (isDark) MapColorScheme.DARK else MapColorScheme.LIGHT
+            uiState.clusters.forEach { cluster ->
+                val position = LatLng(cluster.lat, cluster.lng)
+                val markerState = rememberUpdatedMarkerState(position = position)
+                val icon = remember(cluster.id) {
+                    runCatching {
+                        if (cluster.pins.size == 1) {
+                            createEmojiCircleMarker(
+                                context = context,
+                                emoji = cluster.pins.first().emoji,
+                                colorHex = cluster.pins.first().colorHex
                             )
-                    }
-                ) {
-                    uiState.clusters.forEach { cluster ->
-                        val position = LatLng(cluster.lat, cluster.lng)
-                        val markerState = rememberUpdatedMarkerState(position = position)
-                        val icon = remember(cluster.id) {
-                            runCatching {
-                                if (cluster.pins.size == 1) {
-                                    createEmojiCircleMarker(
-                                        context = context,
-                                        emoji = cluster.pins.first().emoji,
-                                        colorHex = cluster.pins.first().colorHex
-                                    )
-                                } else {
-                                    createClusterMarker(context, cluster)
-                                }
-                            }.getOrNull()
+                        } else {
+                            createClusterMarker(context, cluster)
                         }
-                        Marker(
-                            state = markerState,
-                            icon = icon,
-                            onClick = {
-                                viewModel.selectCluster(cluster)
-                                true
-                            }
-                        )
-                    }
+                    }.getOrNull()
                 }
+                Marker(
+                    state = markerState,
+                    icon = icon,
+                    onClick = {
+                        viewModel.selectCluster(cluster)
+                        true
+                    }
+                )
             }
         }
+
+        MapHeaderOverlay(
+            selectedMonth = uiState.selectedMonth,
+            onBack = onBack,
+            onPreviousMonth = viewModel::previousMonth,
+            onNextMonth = viewModel::nextMonth,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
 
         if (uiState.selectedCluster != null) {
             ModalBottomSheet(
@@ -330,45 +296,134 @@ private fun PinItem(pin: TransactionMapPin) {
 
 @Composable
 private fun MonthSelectorRow(
+    onBack: () -> Unit,
+    selectedMonth: YearMonth,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(horizontal = 8.dp, vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(horizontal = 52.dp)
+        ) {
+            MonthDragSelector(
+                selectedMonth = selectedMonth,
+                onPreviousMonth = onPreviousMonth,
+                onNextMonth = onNextMonth
+            )
+        }
+    }
+}
+
+@Composable
+private fun MapHeaderOverlay(
+    selectedMonth: YearMonth,
+    onBack: () -> Unit,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.Transparent)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+                .blur(20.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colorStops = arrayOf(
+                            0f to MaterialTheme.colorScheme.background.copy(alpha = 1f),
+                            0.42f to MaterialTheme.colorScheme.background.copy(alpha = 1f),
+                            1f to MaterialTheme.colorScheme.background.copy(alpha = 0f)
+                        )
+                    )
+                )
+        )
+
+        Column {
+            MonthSelectorRow(
+                onBack = onBack,
+                selectedMonth = selectedMonth,
+                onPreviousMonth = onPreviousMonth,
+                onNextMonth = onNextMonth,
+                modifier = Modifier
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+        }
+    }
+}
+
+@Composable
+private fun MonthDragSelector(
     selectedMonth: YearMonth,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(
-            onClick = onPreviousMonth,
-            modifier = Modifier.size(40.dp)
-        ) {
-            Text(
-                text = "◄",
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
+    val dragThresholdPx = with(Density(LocalContext.current)) { 56.dp.toPx() }
 
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
+            .pointerInput(selectedMonth) {
+                var totalDragX = 0f
+
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { change, dragAmount ->
+                        totalDragX += dragAmount
+                        if (abs(totalDragX) >= dragThresholdPx) {
+                            if (totalDragX < 0f) {
+                                onNextMonth()
+                            } else {
+                                onPreviousMonth()
+                            }
+                            totalDragX = 0f
+                        }
+                        change.consume()
+                    },
+                    onDragEnd = {
+                        totalDragX = 0f
+                    },
+                    onDragCancel = {
+                        totalDragX = 0f
+                    }
+                )
+            }
+            .padding(horizontal = 18.dp, vertical = 10.dp)
+    ) {
         Text(
-            text = selectedMonth.format(monthFormatter)
-                .replaceFirstChar { it.uppercaseChar() },
+            text = "< ${selectedMonth.format(monthFormatter).replaceFirstChar { it.uppercaseChar() }} >",
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface
         )
-
-        IconButton(
-            onClick = onNextMonth,
-            modifier = Modifier.size(40.dp)
-        ) {
-            Text(
-                text = "►",
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
     }
 }

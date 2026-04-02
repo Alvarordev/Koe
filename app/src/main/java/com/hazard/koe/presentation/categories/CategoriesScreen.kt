@@ -34,10 +34,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hazard.koe.R
 import kotlinx.coroutines.launch
 import com.hazard.koe.data.model.Category
 import com.hazard.koe.data.model.relations.CategoryIdSummary
@@ -83,9 +85,10 @@ fun CategoriesScreen(
             )
             IconButton(onClick = onAddCategoryClick) {
                 Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Añadir categoría",
-                    modifier = Modifier.size(24.dp)
+                    painter = painterResource(R.drawable.plus),
+                    modifier = Modifier
+                        .size(24.dp),
+                    contentDescription = "Añadir categoría"
                 )
             }
         }

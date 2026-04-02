@@ -93,13 +93,104 @@ class AddAccountViewModel(
     }
 
     fun selectType(type: AccountType) {
+        val currentForm = _uiState.value.formState
         val freshForm = when (type) {
-            AccountType.CASH -> AddAccountFormState.CashFormState()
-            AccountType.DEBIT -> AddAccountFormState.DebitFormState()
-            AccountType.CREDIT -> AddAccountFormState.CreditFormState()
-            AccountType.SAVINGS -> AddAccountFormState.SavingsFormState()
+            AccountType.CASH -> AddAccountFormState.CashFormState(
+                currencyCode = currentForm.currencyCode,
+                color = currentForm.color,
+                name = currentForm.name
+            )
+            AccountType.DEBIT -> AddAccountFormState.DebitFormState(
+                currencyCode = currentForm.currencyCode,
+                color = currentForm.color,
+                name = currentForm.name
+            )
+            AccountType.CREDIT -> AddAccountFormState.CreditFormState(
+                currencyCode = currentForm.currencyCode,
+                color = currentForm.color,
+                name = currentForm.name
+            )
+            AccountType.SAVINGS -> AddAccountFormState.SavingsFormState(
+                currencyCode = currentForm.currencyCode,
+                color = currentForm.color,
+                name = currentForm.name
+            )
         }
         _uiState.update { it.copy(selectedType = type, formState = freshForm, errorMessage = null) }
+    }
+
+    fun nextStep() {
+        val state = _uiState.value
+        if (!validateCurrentStep(state)) return
+
+        val nextStep = state.currentStep + 1
+        if (nextStep <= state.totalSteps) {
+            _uiState.update { it.copy(currentStep = nextStep, errorMessage = null) }
+        }
+    }
+
+    fun previousStep() {
+        val state = _uiState.value
+        val prevStep = state.currentStep - 1
+        if (prevStep >= 1) {
+            _uiState.update { it.copy(currentStep = prevStep, errorMessage = null) }
+        }
+    }
+
+    private fun validateCurrentStep(state: AddAccountUiState): Boolean {
+        val actualStep = if (!state.hasCardDetailsStep && state.currentStep >= 3) {
+            state.currentStep + 1
+        } else {
+            state.currentStep
+        }
+        return when (actualStep) {
+            1 -> true
+            2 -> validateDetailsStep(state.formState)
+            3 -> true
+            4 -> {
+                if (state.formState.name.isBlank()) {
+                    _uiState.update { it.copy(errorMessage = "El nombre de la cuenta es requerido") }
+                    return false
+                }
+                true
+            }
+            5 -> true
+            6 -> true
+            else -> true
+        }
+    }
+
+    private fun validateDetailsStep(form: AddAccountFormState): Boolean {
+        when (form) {
+            is AddAccountFormState.CreditFormState -> {
+                if (form.paymentDay.isNotBlank()) {
+                    val payDay = form.paymentDay.toIntOrNull()
+                    if (payDay == null || payDay !in 1..31) {
+                        _uiState.update { it.copy(errorMessage = "El día de pago debe estar entre 1 y 31") }
+                        return false
+                    }
+                }
+                if (form.closingDay.isNotBlank()) {
+                    val closeDay = form.closingDay.toIntOrNull()
+                    if (closeDay == null || closeDay !in 1..31) {
+                        _uiState.update { it.copy(errorMessage = "El día de cierre debe estar entre 1 y 31") }
+                        return false
+                    }
+                }
+                val limit = (form.creditLimit.toDoubleOrNull() ?: 0.0) * 100
+                val used = (form.creditUsed.toDoubleOrNull() ?: 0.0) * 100
+                if (used.toLong() < 0L) {
+                    _uiState.update { it.copy(errorMessage = "El crédito usado no puede ser negativo") }
+                    return false
+                }
+                if (used.toLong() > limit.toLong()) {
+                    _uiState.update { it.copy(errorMessage = CreditLimitExceededException().message) }
+                    return false
+                }
+            }
+            else -> {}
+        }
+        return true
     }
 
     fun updateName(name: String) {
@@ -175,6 +266,7 @@ class AddAccountViewModel(
     }
 
     fun updateLastFourDigits(value: String) {
+        if (value.length > 4) return
         _uiState.update { state ->
             state.copy(formState = when (val form = state.formState) {
                 is AddAccountFormState.DebitFormState -> form.copy(lastFourDigits = value)
@@ -246,6 +338,18 @@ class AddAccountViewModel(
                 _uiState.update { it.copy(isSubmitting = false, errorMessage = e.message) }
             }
         }
+    }
+
+    fun buildPreviewAccount(): Account {
+        val form = _uiState.value.formState
+        return buildAccount(form) ?: Account(
+            name = form.name.ifBlank { "Cuenta" },
+            type = _uiState.value.selectedType,
+            color = form.color,
+            currencyCode = form.currencyCode,
+            initialBalance = 0L,
+            currentBalance = 0L
+        )
     }
 
     private fun buildAccount(form: AddAccountFormState): Account? {

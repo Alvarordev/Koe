@@ -11,14 +11,14 @@ sealed class AddAccountFormState {
     data class CashFormState(
         override val name: String = "",
         override val color: String = "#1A73E8",
-        override val currencyCode: String = "USD",
+        override val currencyCode: String = "PEN",
         val initialBalance: String = ""
     ) : AddAccountFormState()
 
     data class DebitFormState(
         override val name: String = "",
         override val color: String = "#1A73E8",
-        override val currencyCode: String = "USD",
+        override val currencyCode: String = "PEN",
         val initialBalance: String = "",
         val cardNetwork: CardNetwork = CardNetwork.VISA,
         val lastFourDigits: String = "",
@@ -28,7 +28,7 @@ sealed class AddAccountFormState {
     data class CreditFormState(
         override val name: String = "",
         override val color: String = "#1A73E8",
-        override val currencyCode: String = "USD",
+        override val currencyCode: String = "PEN",
         val creditLimit: String = "",
         val creditUsed: String = "",
         val cardNetwork: CardNetwork = CardNetwork.VISA,
@@ -42,7 +42,7 @@ sealed class AddAccountFormState {
     data class SavingsFormState(
         override val name: String = "",
         override val color: String = "#1A73E8",
-        override val currencyCode: String = "USD",
+        override val currencyCode: String = "PEN",
         val initialBalance: String = "",
         val interestRate: String = ""
     ) : AddAccountFormState()
@@ -54,5 +54,12 @@ data class AddAccountUiState(
     val isSubmitting: Boolean = false,
     val submitSuccess: Boolean = false,
     val errorMessage: String? = null,
-    val isEditing: Boolean = false
-)
+    val isEditing: Boolean = false,
+    val currentStep: Int = 1
+) {
+    val totalSteps: Int
+        get() = if (selectedType == AccountType.CASH) 5 else 6
+
+    val hasCardDetailsStep: Boolean
+        get() = selectedType != AccountType.CASH
+}

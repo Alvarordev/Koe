@@ -21,6 +21,8 @@ data class MapCluster(
 data class TransactionMapUiState(
     val selectedMonth: YearMonth = YearMonth.now(),
     val clusters: List<MapCluster> = emptyList(),
+    val mapCenterLat: Double = -12.0464,
+    val mapCenterLng: Double = -77.0428,
     val selectedCluster: MapCluster? = null,
     val isLoading: Boolean = true
 )
