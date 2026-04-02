@@ -3,6 +3,7 @@ package com.hazard.koe.presentation.accounts.accountdetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hazard.koe.domain.usecase.account.ArchiveAccountUseCase
+import com.hazard.koe.domain.usecase.account.GetBalanceHistoryUseCase
 import com.hazard.koe.domain.usecase.account.GetAccountByIdUseCase
 import com.hazard.koe.domain.usecase.transaction.GetTransactionsByAccountUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +17,7 @@ class AccountDetailViewModel(
     private val accountId: Long,
     getAccountById: GetAccountByIdUseCase,
     getTransactionsByAccount: GetTransactionsByAccountUseCase,
+    getBalanceHistory: GetBalanceHistoryUseCase,
     private val archiveAccount: ArchiveAccountUseCase
 ) : ViewModel() {
 
@@ -25,13 +27,14 @@ class AccountDetailViewModel(
     val uiState: StateFlow<AccountDetailUiState> = combine(
         getAccountById(accountId),
         getTransactionsByAccount(accountId),
+        getBalanceHistory(accountId),
         _showDeleteDialog,
         _isArchived
-    ) { account, transactions, showDelete, archived ->
+    ) { account, transactions, balanceHistory, showDelete, archived ->
         AccountDetailUiState(
             account = account,
             transactions = transactions,
-            balanceHistory = emptyList(),
+            balanceHistory = balanceHistory,
             isLoading = false,
             showDeleteDialog = showDelete,
             isArchived = archived

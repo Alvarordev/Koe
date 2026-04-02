@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -26,6 +27,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hazard.koe.data.enums.AccountType
+import com.hazard.koe.presentation.accounts.accountdetail.components.SparkBarChart
 import com.hazard.koe.presentation.accounts.components.AccountCard
 import com.hazard.koe.presentation.components.DaySeparator
 import com.hazard.koe.presentation.components.TransactionRow
@@ -82,6 +85,10 @@ fun AccountDetailScreen(
         )
     )
 
+    // Track selected balance from chart interaction
+    var selectedBalance by remember { mutableStateOf<Long?>(null) }
+    var selectedDelta by remember { mutableStateOf<Float?>(null) }
+
     LaunchedEffect(uiState.isArchived) {
         if (uiState.isArchived) onNavigateBack()
     }
@@ -110,9 +117,7 @@ fun AccountDetailScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(rootPadding),
-        contentPadding = PaddingValues(
-            bottom = 16.dp
-        )
+        contentPadding = PaddingValues(bottom = 16.dp)
     ) {
         item {
             IconButton(
@@ -127,7 +132,7 @@ fun AccountDetailScreen(
         }
 
         if (account != null) {
-            val displayBalance = when (account.type) {
+            val baseBalance = when (account.type) {
                 AccountType.CREDIT -> {
                     val available = (account.creditLimit ?: 0L) - (account.creditUsed ?: 0L)
                     available
@@ -135,6 +140,8 @@ fun AccountDetailScreen(
                 else -> account.currentBalance
             }
 
+            // Use chart-selected balance if available, otherwise account's current balance
+            val displayBalance = selectedBalance ?: baseBalance
             val balanceLabel = if (account.type == AccountType.CREDIT) "Disponible" else null
 
             item {
@@ -145,7 +152,7 @@ fun AccountDetailScreen(
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         AccountCard(
                             account = account,
                             cardHeight = 60.dp,
@@ -153,31 +160,42 @@ fun AccountDetailScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Column {
-                            Text(
-                                text = account.name,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            if (balanceLabel != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Column {
                                 Text(
-                                    text = balanceLabel,
-                                    fontSize = 13.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = account.name,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                if (balanceLabel != null) {
+                                    Text(
+                                        text = balanceLabel,
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Text(
+                                    text = CurrencyFormatter.formatBalance(
+                                        displayBalance,
+                                        account.currencyCode
+                                    ),
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
 
-                            Text(
-                                text = CurrencyFormatter.formatBalance(displayBalance, account.currencyCode),
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            // Delta badge
+                            selectedDelta?.let { delta ->
+                                DeltaBadge(delta = delta)
+                            }
                         }
                     }
-
 
                     Box {
                         var menuExpanded by remember { mutableStateOf(false) }
@@ -217,6 +235,25 @@ fun AccountDetailScreen(
                 }
             }
 
+            // Spark bar chart
+            if (uiState.balanceHistory.isNotEmpty()) {
+                item {
+                    SparkBarChart(
+                        balanceHistory = uiState.balanceHistory,
+                        currencyCode = account.currencyCode,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 8.dp),
+                        onSelectedBalanceChange = { balance, delta ->
+                            selectedBalance = balance
+                            selectedDelta = delta
+                        }
+                    )
+                }
+            }
+
+            // Transactions section
             val groupedTransactions = uiState.transactions
                 .sortedByDescending { it.transaction.date }
                 .groupBy { txn ->
@@ -290,5 +327,40 @@ fun AccountDetailScreen(
         }
 
         item { Spacer(modifier = Modifier.height(16.dp)) }
+    }
+}
+
+@Composable
+private fun DeltaBadge(
+    delta: Float,
+    modifier: Modifier = Modifier
+) {
+    val isPositive = delta >= 0f
+    val backgroundColor = if (isPositive) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.errorContainer
+    }
+    val textColor = if (isPositive) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onErrorContainer
+    }
+    val arrow = if (isPositive) "↑" else "↓"
+    val sign = if (isPositive) "+" else ""
+    val text = "$arrow $sign${String.format("%.1f", delta)}%"
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = backgroundColor
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            color = textColor
+        )
     }
 }

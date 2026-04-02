@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,6 +47,7 @@ import com.hazard.koe.data.model.relations.TransactionWithDetails
 import com.hazard.koe.presentation.accounts.components.AccountCard
 import com.hazard.koe.presentation.components.AnimatedAmountText
 import com.hazard.koe.presentation.components.EmojiText
+import com.hazard.koe.presentation.transactionmap.createEmojiCircleMarker
 import com.hazard.koe.ui.theme.ExpenseRed
 import com.hazard.koe.ui.theme.IncomeGreen
 import com.google.android.gms.maps.GoogleMapOptions
@@ -83,6 +85,7 @@ fun TransactionDetailSheet(
     val txn = transaction.transaction
     val account = transaction.account
     val category = transaction.category
+    val context = LocalContext.current
 
     val categoryColor = try {
         Color(category.color.toColorInt())
@@ -273,6 +276,15 @@ fun TransactionDetailSheet(
                 val cameraPositionState = rememberCameraPositionState {
                     this.position = CameraPosition.fromLatLngZoom(position, 15f)
                 }
+                val markerIcon = remember(context, category.emoji, category.color) {
+                    runCatching {
+                        createEmojiCircleMarker(
+                            context = context,
+                            emoji = category.emoji,
+                            colorHex = category.color
+                        )
+                    }.getOrNull()
+                }
 
                 Box(
                     modifier = Modifier
@@ -293,8 +305,10 @@ fun TransactionDetailSheet(
                             GoogleMapOptions().mapColorScheme(MapColorScheme.FOLLOW_SYSTEM)
                         }
                     ) {
-                        Marker(state = rememberUpdatedMarkerState(
-                            position = position))
+                        Marker(
+                            state = rememberUpdatedMarkerState(position = position),
+                            icon = markerIcon
+                        )
                     }
                 }
             }

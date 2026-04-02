@@ -66,36 +66,6 @@ private val limaLatLng = LatLng(-12.0464, -77.0428)
 
 private val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("es", "PE"))
 
-private fun createSinglePinMarker(context: Context, emoji: String, colorHex: String): BitmapDescriptor {
-    val density = context.resources.displayMetrics.density
-    val size = (52 * density).toInt()
-    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-    val canvas = android.graphics.Canvas(bitmap)
-
-    val fillPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-    fillPaint.color = colorHex.toColorInt()
-    canvas.drawCircle(size / 2f, size / 2f, size / 2f * 0.9f, fillPaint)
-
-    val borderPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-    borderPaint.color = android.graphics.Color.WHITE
-    borderPaint.style = android.graphics.Paint.Style.STROKE
-    borderPaint.strokeWidth = 3 * density
-    canvas.drawCircle(size / 2f, size / 2f, size / 2f * 0.9f, borderPaint)
-
-    val emojiView = EmojiTextView(context).apply {
-        text = emoji
-        textSize = 22f
-        measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-        layout(0, 0, measuredWidth, measuredHeight)
-    }
-    canvas.save()
-    canvas.translate(size / 2f - emojiView.measuredWidth / 2f, size / 2f - emojiView.measuredHeight / 2f)
-    emojiView.draw(canvas)
-    canvas.restore()
-
-    return BitmapDescriptorFactory.fromBitmap(bitmap)
-}
-
 private fun createClusterMarker(context: Context, cluster: MapCluster): BitmapDescriptor {
     val density = context.resources.displayMetrics.density
     val circleDp = 44
@@ -111,12 +81,6 @@ private fun createClusterMarker(context: Context, cluster: MapCluster): BitmapDe
     val canvas = android.graphics.Canvas(bitmap)
 
     val fillPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-    val borderPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.WHITE
-        style = android.graphics.Paint.Style.STROKE
-        strokeWidth = 3 * density
-    }
-
     for (idx in visiblePins.indices.reversed()) {
         val pin = visiblePins[idx]
         val cx = idx * (circleSize - overlap) + circleSize / 2f
@@ -125,7 +89,6 @@ private fun createClusterMarker(context: Context, cluster: MapCluster): BitmapDe
 
         fillPaint.color = pin.colorHex.toColorInt()
         canvas.drawCircle(cx, cy, radius, fillPaint)
-        canvas.drawCircle(cx, cy, radius, borderPaint)
 
         val emojiView = EmojiTextView(context).apply {
             text = pin.emoji
@@ -268,7 +231,11 @@ fun TransactionMapScreen(
                         val icon = remember(cluster.id) {
                             runCatching {
                                 if (cluster.pins.size == 1) {
-                                    createSinglePinMarker(context, cluster.pins.first().emoji, cluster.pins.first().colorHex)
+                                    createEmojiCircleMarker(
+                                        context = context,
+                                        emoji = cluster.pins.first().emoji,
+                                        colorHex = cluster.pins.first().colorHex
+                                    )
                                 } else {
                                     createClusterMarker(context, cluster)
                                 }

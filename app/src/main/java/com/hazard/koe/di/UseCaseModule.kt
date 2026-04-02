@@ -4,6 +4,7 @@ import com.hazard.koe.domain.usecase.account.ArchiveAccountUseCase
 import com.hazard.koe.domain.usecase.account.CreateAccountUseCase
 import com.hazard.koe.domain.usecase.account.GetAccountByIdUseCase
 import com.hazard.koe.domain.usecase.account.GetAccountsUseCase
+import com.hazard.koe.domain.usecase.account.GetBalanceHistoryUseCase
 import com.hazard.koe.domain.usecase.account.GetTotalAccountBalanceUseCase
 import com.hazard.koe.domain.usecase.account.UpdateAccountUseCase
 import com.hazard.koe.domain.usecase.budget.CreateBudgetUseCase
@@ -69,6 +70,7 @@ val useCaseModule = module {
     factory { CreateAccountUseCase(get()) }
     factory { ArchiveAccountUseCase(get()) }
     factory { UpdateAccountUseCase(get()) }
+    factory { GetBalanceHistoryUseCase(get(), get()) }
     factory { GetTotalAccountBalanceUseCase(get(), get()) }
 
     // Category

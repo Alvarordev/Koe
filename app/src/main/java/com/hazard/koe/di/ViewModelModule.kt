@@ -25,7 +25,7 @@ val viewModelModule = module {
     viewModel { AddTransactionViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { AccountsViewModel(get(), get(), get(), get()) }
     viewModel { AddAccountViewModel(get(), get(), get()) }
-    viewModel { (accountId: Long) -> AccountDetailViewModel(accountId, get(), get(), get()) }
+    viewModel { (accountId: Long) -> AccountDetailViewModel(accountId, get(), get(), get(), get()) }
     viewModel { CategoriesViewModel(get(), get(), get(), get()) }
     viewModel { (categoryId: Long?) -> AddEditCategoryViewModel(categoryId, get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get(), get(), androidContext()) }

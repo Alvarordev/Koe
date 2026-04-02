@@ -146,7 +146,8 @@ fun CategoriesScreen(
                 2 -> SubscriptionsContent(
                     subscriptions = uiState.subscriptions,
                     onAddSubscription = onAddSubscription,
-                    onSubscriptionClick = onSubscriptionClick
+                    onSubscriptionClick = onSubscriptionClick,
+                    bottomPadding = contentPadding
                 )
             }
         }
@@ -193,25 +194,30 @@ private fun CategoryGridContent(
 private fun SubscriptionsContent(
     subscriptions: List<SubscriptionWithDetails>,
     onAddSubscription: () -> Unit,
-    onSubscriptionClick: (Long) -> Unit
+    onSubscriptionClick: (Long) -> Unit,
+    bottomPadding: PaddingValues = PaddingValues()
 ) {
     if (subscriptions.isEmpty()) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(bottom = bottomPadding.calculateBottomPadding()),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "Aún no hay nada aquí. Dale seguimiento a tus suscripciones",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            TextButton(onClick = onAddSubscription) {
-                Text(text = "Agregar suscripción")
+            Column(
+                modifier = Modifier.padding(horizontal = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Aún no hay nada aquí. Dale seguimiento a tus suscripciones",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                TextButton(onClick = onAddSubscription) {
+                    Text(text = "Agregar suscripción")
+                }
             }
         }
     } else {
