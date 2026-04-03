@@ -63,6 +63,10 @@ class HomeViewModel(
     private val saveHomeDateFilterPreset: SaveHomeDateFilterPresetUseCase
 ) : ViewModel() {
 
+    companion object {
+        const val ACCOUNT_FILTER_REQUEST_KEY = "home_account_filter_request"
+    }
+
     private val _dateFilterMode = MutableStateFlow<DateFilterMode>(DateFilterMode.Month)
     private val _showDateFilterDialog = MutableStateFlow(false)
     private val _showFilterSheet = MutableStateFlow(false)
@@ -200,6 +204,10 @@ class HomeViewModel(
 
     fun onRemoveAccountFilter(accountId: Long) {
         _selectedAccountIds.value = _selectedAccountIds.value - accountId
+    }
+
+    fun applySingleAccountFilter(accountId: Long) {
+        _selectedAccountIds.value = setOf(accountId)
     }
 
     fun deleteTransaction(transaction: Transaction) {

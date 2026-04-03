@@ -251,7 +251,7 @@ class VoiceTransactionViewModel(
             description = description.ifBlank { null },
             accountId = account.id,
             categoryId = category.id,
-            date = snapshot.selectedDate,
+            date = System.currentTimeMillis(),
             latitude = if (snapshot.isLocationEnabled) snapshot.latitude else null,
             longitude = if (snapshot.isLocationEnabled) snapshot.longitude else null
         )

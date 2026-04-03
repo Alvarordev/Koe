@@ -52,6 +52,8 @@ class AddTransactionViewModel(
     private var yapeDateMillis: Long? = null
     private var categorySummaryJob: Job? = null
     private var editingTransactionId: Long? = null
+    private var editingTransactionCreatedAt: Long? = null
+    private var loadTransactionJob: Job? = null
 
     init {
         loadCategories()
@@ -123,6 +125,10 @@ class AddTransactionViewModel(
         categorySummaryJob?.cancel()
         categorySummaryJob = null
         editingTransactionId = null
+        editingTransactionCreatedAt = null
+        loadTransactionJob?.cancel()
+        loadTransactionJob = null
+        yapeDateMillis = null
         _uiState.update {
             it.copy(
                 selectedCategory = null,
@@ -131,6 +137,8 @@ class AddTransactionViewModel(
                 submitError = null,
                 categoryError = false,
                 categorySummary = null,
+                prefilledSource = null,
+                yapeOperationNumber = null,
                 selectedDate = System.currentTimeMillis()
             )
         }
@@ -138,6 +146,8 @@ class AddTransactionViewModel(
 
     fun loadTransactionForEdit(transaction: Transaction, account: Account, category: Category) {
         editingTransactionId = transaction.id
+        editingTransactionCreatedAt = transaction.createdAt
+        yapeDateMillis = null
         val amountDisplay = centsToDisplayString(transaction.amount)
         _uiState.update {
             it.copy(
@@ -151,23 +161,26 @@ class AddTransactionViewModel(
                 longitude = transaction.longitude,
                 submitError = null,
                 submitSuccess = false,
-                categorySummary = null
+                categorySummary = null,
+                prefilledSource = null,
+                yapeOperationNumber = null
             )
         }
+        loadCategorySummary(category.id)
     }
 
     fun getEditingTransactionId(): Long? = editingTransactionId
 
     fun loadTransactionById(transactionId: Long) {
-        viewModelScope.launch {
-            transactionRepository.getById(transactionId).collect { transactionWithDetails ->
-                if (transactionWithDetails != null) {
-                    loadTransactionForEdit(
-                        transaction = transactionWithDetails.transaction,
-                        account = transactionWithDetails.account,
-                        category = transactionWithDetails.category
-                    )
-                }
+        loadTransactionJob?.cancel()
+        loadTransactionJob = viewModelScope.launch {
+            val transactionWithDetails = transactionRepository.getById(transactionId).first()
+            if (transactionWithDetails != null) {
+                loadTransactionForEdit(
+                    transaction = transactionWithDetails.transaction,
+                    account = transactionWithDetails.account,
+                    category = transactionWithDetails.category
+                )
             }
         }
     }
@@ -312,7 +325,7 @@ class AddTransactionViewModel(
                     date = transactionDate,
                     latitude = if (state.isLocationEnabled) state.latitude else null,
                     longitude = if (state.isLocationEnabled) state.longitude else null,
-                    createdAt = if (isEditing) 0L else System.currentTimeMillis()
+                    createdAt = if (isEditing) (editingTransactionCreatedAt ?: System.currentTimeMillis()) else System.currentTimeMillis()
                 )
 
                 if (isEditing) {
@@ -349,6 +362,9 @@ class AddTransactionViewModel(
         categorySummaryJob = null
         yapeDateMillis = null
         editingTransactionId = null
+        editingTransactionCreatedAt = null
+        loadTransactionJob?.cancel()
+        loadTransactionJob = null
         _uiState.update {
             it.copy(
                 selectedCategory = null,
@@ -370,8 +386,21 @@ class AddTransactionViewModel(
     }
 
     private fun amountStringToMinorUnits(s: String): Long {
-        if (s.isBlank() || s == "." || s == "0") return 0L
-        return ((s.toDoubleOrNull() ?: 0.0) * 100).toLong()
+        val normalized = s.trim()
+        if (normalized.isBlank() || normalized == "." || normalized == "0") return 0L
+
+        val parts = normalized.split('.', limit = 2)
+        val whole = parts.getOrNull(0).orEmpty().ifBlank { "0" }
+        val wholePart = whole.toLongOrNull() ?: return 0L
+
+        val fractionalRaw = parts.getOrNull(1).orEmpty()
+        val fractionalPart = when {
+            fractionalRaw.isEmpty() -> 0L
+            fractionalRaw.length == 1 -> (fractionalRaw + "0").toLongOrNull() ?: 0L
+            else -> fractionalRaw.take(2).toLongOrNull() ?: 0L
+        }
+
+        return (wholePart * 100L) + fractionalPart
     }
 
     private fun centsToDisplayString(amountCents: Long): String {

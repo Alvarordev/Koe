@@ -31,7 +31,7 @@ import org.koin.dsl.module
 val repositoryModule = module {
     single<AccountRepository> { AccountRepositoryImpl(get()) }
     single<CategoryRepository> { CategoryRepositoryImpl(get()) }
-    single<TransactionRepository> { TransactionRepositoryImpl(get(), get()) }
+    single<TransactionRepository> { TransactionRepositoryImpl(get(), get(), get()) }
     single<RecurringRuleRepository> { RecurringRuleRepositoryImpl(get(), get(), get()) }
     single<SubscriptionServiceRepository> { SubscriptionServiceRepositoryImpl(get()) }
     single<BudgetRepository> { BudgetRepositoryImpl(get()) }

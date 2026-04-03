@@ -59,6 +59,7 @@ fun AccountDetailScreen(
     accountId: Long,
     onNavigateBack: () -> Unit,
     onEditAccount: (Long) -> Unit = {},
+    onViewAllTransactions: (Long) -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: AccountDetailViewModel = koinViewModel { parametersOf(accountId) }
 ) {
@@ -287,7 +288,7 @@ fun AccountDetailScreen(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
-                        TextButton(onClick = { }) {
+                        TextButton(onClick = { onViewAllTransactions(accountId) }) {
                             Text("Ver todos")
                         }
                     }

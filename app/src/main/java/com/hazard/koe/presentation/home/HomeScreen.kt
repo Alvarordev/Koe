@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,11 +63,20 @@ fun HomeScreen(
     contentPadding: PaddingValues = PaddingValues(),
     onEditTransaction: (Long) -> Unit = {},
     onNavigateToMap: () -> Unit = {},
+    pendingAccountFilterId: Long? = null,
+    onAccountFilterApplied: () -> Unit = {},
     viewModel: HomeViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedTransaction by remember { mutableStateOf<TransactionWithDetails?>(null) }
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues()
+
+    LaunchedEffect(pendingAccountFilterId) {
+        pendingAccountFilterId?.let { accountId ->
+            viewModel.applySingleAccountFilter(accountId)
+            onAccountFilterApplied()
+        }
+    }
 
     if (uiState.showDateFilterDialog) {
         DateFilterDialog(

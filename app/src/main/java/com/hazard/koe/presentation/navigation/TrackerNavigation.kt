@@ -63,6 +63,7 @@ import com.hazard.koe.presentation.categories.CategoriesViewModel
 import com.hazard.koe.presentation.categories.addcategory.AddEditCategorySheet
 import com.hazard.koe.presentation.components.FabMenu
 import com.hazard.koe.presentation.home.HomeScreen
+import com.hazard.koe.presentation.home.HomeViewModel
 import com.hazard.koe.presentation.transactionmap.TransactionMapScreen
 import com.hazard.koe.presentation.loans.AddLoanScreen
 import com.hazard.koe.presentation.loans.AddLoanViewModel
@@ -296,14 +297,20 @@ fun TrackerScaffold() {
                     )
                 },
             ) {
-                composable(TrackerTab.Home.route) {
+                composable(TrackerTab.Home.route) { backStackEntry ->
+                    val pendingAccountFilterId =
+                        backStackEntry.savedStateHandle.get<Long>(HomeViewModel.ACCOUNT_FILTER_REQUEST_KEY)
                     HomeScreen(
                         contentPadding = innerPadding,
                         onEditTransaction = { transactionId ->
                             addViewModel.loadTransactionById(transactionId)
                             navController.navigate("add_transaction_amount")
                         },
-                        onNavigateToMap = { navController.navigate("transaction_map") }
+                        onNavigateToMap = { navController.navigate("transaction_map") },
+                        pendingAccountFilterId = pendingAccountFilterId,
+                        onAccountFilterApplied = {
+                            backStackEntry.savedStateHandle.remove<Long>(HomeViewModel.ACCOUNT_FILTER_REQUEST_KEY)
+                        }
                     )
                 }
                 composable("transaction_map") {
@@ -383,7 +390,18 @@ fun TrackerScaffold() {
                     AccountDetailScreen(
                         accountId = accountId,
                         onNavigateBack = { navController.popBackStack() },
-                        onEditAccount = { id -> navController.navigate("edit_account/$id") }
+                        onEditAccount = { id -> navController.navigate("edit_account/$id") },
+                        onViewAllTransactions = { selectedAccountId ->
+                            navController.getBackStackEntry(TrackerTab.Home.route)
+                                .savedStateHandle[HomeViewModel.ACCOUNT_FILTER_REQUEST_KEY] = selectedAccountId
+                            navController.navigate(TrackerTab.Home.route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
                     )
                 }
                 composable("casual_loan_detail/{personId}") { backStackEntry ->

@@ -1,5 +1,7 @@
 package com.hazard.koe.data.repository.impl
 
+import androidx.room.withTransaction
+import com.hazard.koe.data.db.TrackerDatabase
 import com.hazard.koe.data.db.dao.AccountDao
 import com.hazard.koe.data.db.dao.TransactionDao
 import com.hazard.koe.data.enums.AccountType
@@ -17,7 +19,8 @@ import kotlinx.coroutines.flow.first
 
 class TransactionRepositoryImpl(
     private val transactionDao: TransactionDao,
-    private val accountDao: AccountDao
+    private val accountDao: AccountDao,
+    private val database: TrackerDatabase? = null
 ) : TransactionRepository {
 
     override fun getAll(): Flow<List<TransactionWithDetails>> = transactionDao.getAll()
@@ -46,36 +49,75 @@ class TransactionRepositoryImpl(
         transactionDao.getTotalByTypeInPeriod(type, start, end)
 
     override suspend fun create(transaction: Transaction): Long {
-        if (transaction.type == TransactionType.EXPENSE) {
-            val account = accountDao.getById(transaction.accountId).first()
-            if (account != null && account.type == AccountType.CREDIT) {
-                val newCreditUsed = (account.creditUsed ?: 0L) + transaction.amount
-                val creditLimit = account.creditLimit ?: 0L
-                if (newCreditUsed > creditLimit) {
-                    throw CreditLimitExceededException()
-                }
+        return inTransaction {
+            validateApplyTransactionEffect(transaction)
+            val id = transactionDao.insert(transaction)
+            applyTransactionEffect(transaction)
+            id
+        }
+    }
+
+    override suspend fun update(transaction: Transaction) {
+        inTransaction {
+            val existing = transactionDao.getById(transaction.id).first()?.transaction
+            if (existing != null) {
+                revertTransactionEffect(existing)
+                validateApplyTransactionEffect(transaction)
+                transactionDao.update(transaction)
+                applyTransactionEffect(transaction)
             }
         }
+    }
 
-        val id = transactionDao.insert(transaction)
+    override suspend fun delete(transaction: Transaction) {
+        inTransaction {
+            val existing = transactionDao.getById(transaction.id).first()?.transaction
+            if (existing != null) {
+                revertTransactionEffect(existing)
+                transactionDao.delete(existing)
+            }
+        }
+    }
+
+    override suspend fun getLastBySubscriptionId(subscriptionId: Long): Transaction? =
+        transactionDao.getLastBySubscriptionId(subscriptionId)
+
+    override suspend fun deleteFutureBySubscriptionId(subscriptionId: Long, afterDate: Long) =
+        transactionDao.deleteFutureBySubscriptionId(subscriptionId, afterDate)
+
+    override fun getTransactionsWithCoordinatesByMonth(startMs: Long, endMs: Long): Flow<List<TransactionWithMapData>> =
+        transactionDao.getTransactionsWithCoordinatesByMonth(startMs, endMs)
+
+    private suspend fun validateApplyTransactionEffect(transaction: Transaction) {
+        if (transaction.type != TransactionType.EXPENSE) return
+
+        val account = accountDao.getById(transaction.accountId).first() ?: return
+        if (account.type == AccountType.CREDIT) {
+            val newCreditUsed = (account.creditUsed ?: 0L) + transaction.amount
+            val creditLimit = account.creditLimit ?: 0L
+            if (newCreditUsed > creditLimit) {
+                throw CreditLimitExceededException()
+            }
+        }
+    }
+
+    private suspend fun applyTransactionEffect(transaction: Transaction) {
         when (transaction.type) {
             TransactionType.EXPENSE -> {
-                val account = accountDao.getById(transaction.accountId).first()
-                if (account != null) {
-                    if (account.type == AccountType.CREDIT) {
-                        val newCreditUsed = (account.creditUsed ?: 0L) + transaction.amount
-                        accountDao.updateCreditUsed(transaction.accountId, newCreditUsed)
-                    } else {
-                        accountDao.updateBalance(transaction.accountId, account.currentBalance - transaction.amount)
-                    }
+                val account = accountDao.getById(transaction.accountId).first() ?: return
+                if (account.type == AccountType.CREDIT) {
+                    val newCreditUsed = (account.creditUsed ?: 0L) + transaction.amount
+                    accountDao.updateCreditUsed(transaction.accountId, newCreditUsed)
+                } else {
+                    accountDao.updateBalance(transaction.accountId, account.currentBalance - transaction.amount)
                 }
             }
+
             TransactionType.INCOME -> {
-                val account = accountDao.getById(transaction.accountId).first()
-                if (account != null) {
-                    accountDao.updateBalance(transaction.accountId, account.currentBalance + transaction.amount)
-                }
+                val account = accountDao.getById(transaction.accountId).first() ?: return
+                accountDao.updateBalance(transaction.accountId, account.currentBalance + transaction.amount)
             }
+
             TransactionType.TRANSFER -> {
                 val srcAccount = accountDao.getById(transaction.accountId).first()
                 if (srcAccount != null) {
@@ -89,6 +131,7 @@ class TransactionRepositoryImpl(
                     }
                 }
             }
+
             TransactionType.CREDIT_CARD_PAYMENT -> {
                 val srcAccount = accountDao.getById(transaction.accountId).first()
                 if (srcAccount != null) {
@@ -103,19 +146,60 @@ class TransactionRepositoryImpl(
                 }
             }
         }
-        return id
     }
 
-    override suspend fun update(transaction: Transaction) = transactionDao.update(transaction)
+    private suspend fun revertTransactionEffect(transaction: Transaction) {
+        when (transaction.type) {
+            TransactionType.EXPENSE -> {
+                val account = accountDao.getById(transaction.accountId).first() ?: return
+                if (account.type == AccountType.CREDIT) {
+                    val newCreditUsed = (account.creditUsed ?: 0L) - transaction.amount
+                    accountDao.updateCreditUsed(transaction.accountId, maxOf(0L, newCreditUsed))
+                } else {
+                    accountDao.updateBalance(transaction.accountId, account.currentBalance + transaction.amount)
+                }
+            }
 
-    override suspend fun delete(transaction: Transaction) = transactionDao.delete(transaction)
+            TransactionType.INCOME -> {
+                val account = accountDao.getById(transaction.accountId).first() ?: return
+                accountDao.updateBalance(transaction.accountId, account.currentBalance - transaction.amount)
+            }
 
-    override suspend fun getLastBySubscriptionId(subscriptionId: Long): Transaction? =
-        transactionDao.getLastBySubscriptionId(subscriptionId)
+            TransactionType.TRANSFER -> {
+                val srcAccount = accountDao.getById(transaction.accountId).first()
+                if (srcAccount != null) {
+                    accountDao.updateBalance(transaction.accountId, srcAccount.currentBalance + transaction.amount)
+                }
+                transaction.transferToAccountId?.let { destId ->
+                    val destAccount = accountDao.getById(destId).first()
+                    if (destAccount != null) {
+                        val received = transaction.convertedAmount ?: transaction.amount
+                        accountDao.updateBalance(destId, destAccount.currentBalance - received)
+                    }
+                }
+            }
 
-    override suspend fun deleteFutureBySubscriptionId(subscriptionId: Long, afterDate: Long) =
-        transactionDao.deleteFutureBySubscriptionId(subscriptionId, afterDate)
+            TransactionType.CREDIT_CARD_PAYMENT -> {
+                val srcAccount = accountDao.getById(transaction.accountId).first()
+                if (srcAccount != null) {
+                    accountDao.updateBalance(transaction.accountId, srcAccount.currentBalance + transaction.amount)
+                }
+                transaction.transferToAccountId?.let { creditId ->
+                    val creditAccount = accountDao.getById(creditId).first()
+                    if (creditAccount != null) {
+                        val newCreditUsed = (creditAccount.creditUsed ?: 0L) + transaction.amount
+                        accountDao.updateCreditUsed(creditId, newCreditUsed)
+                    }
+                }
+            }
+        }
+    }
 
-    override fun getTransactionsWithCoordinatesByMonth(startMs: Long, endMs: Long): Flow<List<TransactionWithMapData>> =
-        transactionDao.getTransactionsWithCoordinatesByMonth(startMs, endMs)
+    private suspend fun <T> inTransaction(block: suspend () -> T): T {
+        return if (database != null) {
+            database.withTransaction { block() }
+        } else {
+            block()
+        }
+    }
 }

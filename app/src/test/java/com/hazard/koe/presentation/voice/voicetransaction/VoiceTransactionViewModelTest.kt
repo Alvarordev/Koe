@@ -92,7 +92,7 @@ class VoiceTransactionViewModelTest {
         val event = eventDeferred.await()
         assertEquals(1, transactionRepo.createdTransactions.size)
         assertEquals(1L, event.transactionId)
-        assertEquals("Transacción creada", event.message)
+        assertEquals("Comida · S/ 25.50", event.message)
         assertEquals("Deshacer", event.undoLabel)
         assertEquals(VoiceTransactionPhase.IDLE, viewModel.uiState.value.phase)
     }

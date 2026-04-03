@@ -80,6 +80,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import java.time.Instant
+import java.time.ZoneOffset
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -155,9 +156,9 @@ fun AmountEntryScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
     var showAccountSheet by remember { mutableStateOf(false) }
-    var pendingDateMillis by remember { mutableLongStateOf(uiState.selectedDate) }
+    var pendingDateMillis by remember { mutableLongStateOf(0L) }
 
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = uiState.selectedDate)
+    val datePickerState = rememberDatePickerState()
     val initialDateTime = remember(uiState.selectedDate) {
         Instant.ofEpochMilli(uiState.selectedDate).atZone(timeZone)
     }
@@ -176,6 +177,12 @@ fun AmountEntryScreen(
         SupportedCurrency.entries.find { it.code == code }?.symbol
     } ?: "$"
     val amountDisplay = uiState.amountString.ifEmpty { "0" }
+
+    LaunchedEffect(uiState.selectedDate) {
+        val utcDayMillis = localDateEpochToUtcStartMillis(uiState.selectedDate, timeZone)
+        pendingDateMillis = utcDayMillis
+        datePickerState.selectedDateMillis = utcDayMillis
+    }
 
     Column(
         modifier = Modifier
@@ -332,7 +339,8 @@ fun AmountEntryScreen(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    pendingDateMillis = datePickerState.selectedDateMillis ?: uiState.selectedDate
+                    pendingDateMillis = datePickerState.selectedDateMillis
+                        ?: localDateEpochToUtcStartMillis(uiState.selectedDate, timeZone)
                     showDatePicker = false
                     showTimePicker = true
                 }) {
@@ -374,7 +382,7 @@ fun AmountEntryScreen(
                     }
                     TextButton(onClick = {
                         val localDate = Instant.ofEpochMilli(pendingDateMillis)
-                            .atZone(timeZone)
+                            .atZone(ZoneOffset.UTC)
                             .toLocalDate()
                         val combined = localDate
                             .atTime(timePickerState.hour, timePickerState.minute)
@@ -390,6 +398,11 @@ fun AmountEntryScreen(
             }
         }
     }
+}
+
+private fun localDateEpochToUtcStartMillis(epochMillis: Long, zoneId: ZoneId): Long {
+    val localDate = Instant.ofEpochMilli(epochMillis).atZone(zoneId).toLocalDate()
+    return localDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 }
 
 @Composable
