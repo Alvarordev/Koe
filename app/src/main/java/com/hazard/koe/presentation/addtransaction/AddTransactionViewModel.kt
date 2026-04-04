@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hazard.koe.data.db.dao.ProcessedNotificationDao
+import com.hazard.koe.data.enums.AccountType
 import com.hazard.koe.data.enums.CategoryType
 import com.hazard.koe.data.enums.TransactionType
 import com.hazard.koe.data.model.Account
@@ -14,6 +15,7 @@ import com.hazard.koe.data.preferences.ThemePreferences
 import com.hazard.koe.data.preferences.YapePreferences
 import com.hazard.koe.domain.exception.DuplicateTransactionException
 import com.hazard.koe.domain.exception.CreditLimitExceededException
+import com.hazard.koe.domain.exception.IncomeNotAllowedForCreditAccountException
 import com.hazard.koe.domain.repository.TransactionRepository
 import com.hazard.koe.domain.usecase.account.GetAccountsUseCase
 import com.hazard.koe.domain.usecase.category.GetCategoriesUseCase
@@ -304,6 +306,11 @@ class AddTransactionViewModel(
             CategoryType.INCOME -> TransactionType.INCOME
         }
 
+        if (account.type == AccountType.CREDIT && transactionType == TransactionType.INCOME) {
+            _uiState.update { it.copy(submitError = "No se permite registrar ingresos en cuentas de crédito") }
+            return
+        }
+
         val transactionDate = if (state.prefilledSource == "yape" && yapeDateMillis != null) {
             yapeDateMillis!!
         } else {
@@ -350,6 +357,7 @@ class AddTransactionViewModel(
             } catch (e: Exception) {
                 val error = when (e) {
                     is CreditLimitExceededException -> "No disponible: excede el límite de crédito"
+                    is IncomeNotAllowedForCreditAccountException -> "No se permite registrar ingresos en cuentas de crédito"
                     else -> "Failed to save transaction"
                 }
                 _uiState.update { it.copy(isSubmitting = false, submitError = error) }

@@ -16,6 +16,7 @@ import com.hazard.koe.data.voice.RecordedVoiceAudio
 import com.hazard.koe.data.voice.VoiceAudioRecorder
 import com.hazard.koe.domain.model.VoiceTransactionInferenceRequest
 import com.hazard.koe.domain.model.VoiceTransactionInferenceResult
+import com.hazard.koe.domain.exception.IncomeNotAllowedForCreditAccountException
 import com.hazard.koe.domain.repository.AccountRepository
 import com.hazard.koe.domain.repository.CategoryRepository
 import com.hazard.koe.domain.repository.TransactionRepository
@@ -216,13 +217,122 @@ class VoiceTransactionViewModelTest {
         assertEquals(VoiceTransactionPhase.ERROR, viewModel.uiState.value.phase)
     }
 
+    @Test
+    fun incomeForCreditAccount_isBlockedWithSpanishMessage() = runTest(testDispatcher) {
+        val recorder = FakeVoiceAudioRecorder().apply {
+            recordedAudio = RecordedVoiceAudio(byteArrayOf(1, 1), "audio/mp4")
+        }
+        val transactionRepo = FakeTransactionRepository()
+        val viewModel = createViewModel(
+            voiceAudioRecorder = recorder,
+            transactionRepository = transactionRepo,
+            inferenceResult = Result.success(
+                VoiceTransactionInferenceResult(
+                    amountMinor = 1500L,
+                    transactionType = TransactionType.INCOME,
+                    categoryId = 20L,
+                    accountId = 2L,
+                    description = "Pago",
+                    confidence = 0.95f,
+                    reasoning = "clear"
+                )
+            ),
+            locationEnabled = false,
+            account = Account(
+                id = 2L,
+                name = "TC",
+                type = AccountType.CREDIT,
+                color = "#333333",
+                currencyCode = "PEN",
+                initialBalance = 0L,
+                currentBalance = 0L,
+                creditLimit = 500_00L,
+                creditUsed = 100_00L,
+                paymentDay = 10,
+                sortOrder = 0
+            ),
+            category = Category(
+                id = 20L,
+                name = "Salario",
+                emoji = "💰",
+                color = "#00AA00",
+                type = CategoryType.INCOME,
+                sortOrder = 0
+            )
+        )
+
+        viewModel.startRecording()
+        viewModel.stopRecording()
+        advanceUntilIdle()
+
+        assertEquals(0, transactionRepo.createdTransactions.size)
+        assertEquals(VoiceTransactionPhase.ERROR, viewModel.uiState.value.phase)
+        assertEquals(
+            "No se permite registrar ingresos en cuentas de crédito",
+            viewModel.uiState.value.errorMessage
+        )
+    }
+
+    @Test
+    fun repositoryIncomeRestriction_isMappedToSpanishMessage() = runTest(testDispatcher) {
+        val recorder = FakeVoiceAudioRecorder().apply {
+            recordedAudio = RecordedVoiceAudio(byteArrayOf(1, 2), "audio/mp4")
+        }
+        val transactionRepo = FakeTransactionRepository().apply {
+            createError = IncomeNotAllowedForCreditAccountException()
+        }
+        val viewModel = createViewModel(
+            voiceAudioRecorder = recorder,
+            transactionRepository = transactionRepo,
+            inferenceResult = Result.success(
+                VoiceTransactionInferenceResult(
+                    amountMinor = 1500L,
+                    transactionType = TransactionType.INCOME,
+                    categoryId = 20L,
+                    accountId = 2L,
+                    description = "Pago",
+                    confidence = 0.95f,
+                    reasoning = "clear"
+                )
+            ),
+            locationEnabled = false,
+            account = Account(
+                id = 2L,
+                name = "TC",
+                type = AccountType.CASH,
+                color = "#333333",
+                currencyCode = "PEN",
+                initialBalance = 0L,
+                currentBalance = 0L,
+                sortOrder = 0
+            ),
+            category = Category(
+                id = 20L,
+                name = "Salario",
+                emoji = "💰",
+                color = "#00AA00",
+                type = CategoryType.INCOME,
+                sortOrder = 0
+            )
+        )
+
+        viewModel.startRecording()
+        viewModel.stopRecording()
+        advanceUntilIdle()
+
+        assertEquals(VoiceTransactionPhase.ERROR, viewModel.uiState.value.phase)
+        assertEquals(
+            "No se permite registrar ingresos en cuentas de crédito",
+            viewModel.uiState.value.errorMessage
+        )
+    }
+
     private fun createViewModel(
         voiceAudioRecorder: FakeVoiceAudioRecorder,
         transactionRepository: FakeTransactionRepository,
         inferenceResult: Result<VoiceTransactionInferenceResult>,
-        locationEnabled: Boolean
-    ): VoiceTransactionViewModel {
-        val account = Account(
+        locationEnabled: Boolean,
+        account: Account = Account(
             id = 1L,
             name = "BCP",
             type = AccountType.CASH,
@@ -231,8 +341,8 @@ class VoiceTransactionViewModelTest {
             initialBalance = 0L,
             currentBalance = 0L,
             sortOrder = 0
-        )
-        val category = Category(
+        ),
+        category: Category = Category(
             id = 10L,
             name = "Comida",
             emoji = "🍔",
@@ -240,7 +350,7 @@ class VoiceTransactionViewModelTest {
             type = CategoryType.EXPENSE,
             sortOrder = 0
         )
-
+    ): VoiceTransactionViewModel {
         val accountRepo = object : AccountRepository {
             override fun getAll(): Flow<List<Account>> = flowOf(listOf(account))
             override fun getById(id: Long): Flow<Account?> = flowOf(null)
@@ -312,6 +422,7 @@ private class FakeVoiceAudioRecorder : VoiceAudioRecorder {
 private class FakeTransactionRepository : TransactionRepository {
     val createdTransactions = mutableListOf<Transaction>()
     val deletedTransactions = mutableListOf<Transaction>()
+    var createError: Throwable? = null
     private var idCounter = 1L
 
     override fun getAll(): Flow<List<TransactionWithDetails>> = flowOf(emptyList())
@@ -337,6 +448,7 @@ private class FakeTransactionRepository : TransactionRepository {
     override fun getTotalByTypeInPeriod(type: TransactionType, start: Long, end: Long): Flow<Long> = flowOf(0L)
 
     override suspend fun create(transaction: Transaction): Long {
+        createError?.let { throw it }
         createdTransactions += transaction
         return idCounter++
     }

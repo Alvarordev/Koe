@@ -13,6 +13,7 @@ import com.hazard.koe.data.model.relations.CurrencyBalance
 import com.hazard.koe.data.model.relations.TransactionWithDetails
 import com.hazard.koe.data.model.relations.TransactionWithMapData
 import com.hazard.koe.domain.exception.CreditLimitExceededException
+import com.hazard.koe.domain.exception.IncomeNotAllowedForCreditAccountException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -52,6 +53,39 @@ class TransactionRepositoryCreditLimitTest {
         val result = runCatching { repository.create(tx) }
 
         assertTrue(result.exceptionOrNull() is CreditLimitExceededException)
+        assertEquals(0, transactionDao.insertCalls)
+    }
+
+    @Test
+    fun createIncomeForCredit_throwsAndDoesNotPersist() = runTest {
+        val accountDao = FakeAccountDao(
+            account = Account(
+                id = 10L,
+                name = "Credit",
+                type = AccountType.CREDIT,
+                color = "#000000",
+                currencyCode = "USD",
+                initialBalance = 0L,
+                currentBalance = 0L,
+                creditLimit = 100_00L,
+                creditUsed = 10_00L,
+                paymentDay = 10
+            )
+        )
+        val transactionDao = FakeTransactionDao()
+        val repository = TransactionRepositoryImpl(transactionDao, accountDao)
+
+        val tx = Transaction(
+            type = TransactionType.INCOME,
+            amount = 20_00L,
+            accountId = 10L,
+            categoryId = 1L,
+            date = System.currentTimeMillis()
+        )
+
+        val result = runCatching { repository.create(tx) }
+
+        assertTrue(result.exceptionOrNull() is IncomeNotAllowedForCreditAccountException)
         assertEquals(0, transactionDao.insertCalls)
     }
 

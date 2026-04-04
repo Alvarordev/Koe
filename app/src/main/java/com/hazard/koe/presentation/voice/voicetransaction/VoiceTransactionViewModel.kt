@@ -2,12 +2,14 @@ package com.hazard.koe.presentation.voice.voicetransaction
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hazard.koe.data.enums.AccountType
 import com.hazard.koe.data.enums.CategoryType
 import com.hazard.koe.data.enums.TransactionType
 import com.hazard.koe.data.model.Account
 import com.hazard.koe.data.model.Category
 import com.hazard.koe.data.model.Transaction
 import com.hazard.koe.data.voice.VoiceAudioRecorder
+import com.hazard.koe.domain.exception.IncomeNotAllowedForCreditAccountException
 import com.hazard.koe.domain.model.VoiceAccountContext
 import com.hazard.koe.domain.model.VoiceCategoryContext
 import com.hazard.koe.domain.model.VoiceTransactionInferenceRequest
@@ -234,6 +236,16 @@ class VoiceTransactionViewModel(
         description: String,
         transactionType: TransactionType
     ) {
+        if (account.type == AccountType.CREDIT && transactionType == TransactionType.INCOME) {
+            _uiState.update {
+                it.copy(
+                    phase = VoiceTransactionPhase.ERROR,
+                    errorMessage = "No se permite registrar ingresos en cuentas de crédito"
+                )
+            }
+            return
+        }
+
         val snapshot = _uiState.value
         if (snapshot.isLocationEnabled && (snapshot.latitude == null || snapshot.longitude == null)) {
             _uiState.update {
@@ -294,12 +306,16 @@ class VoiceTransactionViewModel(
                         undoLabel = "Deshacer"
                     )
                 )
-            }.onFailure {
+            }.onFailure { error ->
+                val errorMessage = when (error) {
+                    is IncomeNotAllowedForCreditAccountException -> "No se permite registrar ingresos en cuentas de crédito"
+                    else -> "No se pudo guardar la transacción"
+                }
                 _uiState.update { state ->
                     state.copy(
                         phase = VoiceTransactionPhase.ERROR,
                         isSubmitting = false,
-                        errorMessage = "No se pudo guardar la transacción"
+                        errorMessage = errorMessage
                     )
                 }
             }

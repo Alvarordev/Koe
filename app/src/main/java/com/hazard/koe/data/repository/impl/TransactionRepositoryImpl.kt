@@ -13,6 +13,7 @@ import com.hazard.koe.data.model.relations.CategoryTotal
 import com.hazard.koe.data.model.relations.TransactionWithDetails
 import com.hazard.koe.data.model.relations.TransactionWithMapData
 import com.hazard.koe.domain.exception.CreditLimitExceededException
+import com.hazard.koe.domain.exception.IncomeNotAllowedForCreditAccountException
 import com.hazard.koe.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -89,9 +90,14 @@ class TransactionRepositoryImpl(
         transactionDao.getTransactionsWithCoordinatesByMonth(startMs, endMs)
 
     private suspend fun validateApplyTransactionEffect(transaction: Transaction) {
+        val account = accountDao.getById(transaction.accountId).first() ?: return
+
+        if (transaction.type == TransactionType.INCOME && account.type == AccountType.CREDIT) {
+            throw IncomeNotAllowedForCreditAccountException()
+        }
+
         if (transaction.type != TransactionType.EXPENSE) return
 
-        val account = accountDao.getById(transaction.accountId).first() ?: return
         if (account.type == AccountType.CREDIT) {
             val newCreditUsed = (account.creditUsed ?: 0L) + transaction.amount
             val creditLimit = account.creditLimit ?: 0L
