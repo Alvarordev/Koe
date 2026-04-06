@@ -25,8 +25,14 @@ interface BudgetDao {
     @Query("SELECT * FROM budgets WHERE categoryId = :categoryId AND isActive = 1 LIMIT 1")
     fun getByCategory(categoryId: Long): Flow<Budget?>
 
+    @Query("SELECT * FROM budgets")
+    suspend fun getAllRaw(): List<Budget>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(budget: Budget): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(budgets: List<Budget>)
 
     @Update
     suspend fun update(budget: Budget)

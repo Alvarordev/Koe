@@ -87,8 +87,14 @@ interface TransactionDao {
     """)
     fun getTransactionsWithCoordinatesByMonth(startMs: Long, endMs: Long): Flow<List<TransactionWithMapData>>
 
+    @Query("SELECT * FROM transactions ORDER BY date DESC")
+    suspend fun getAllRaw(): List<Transaction>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(transaction: Transaction): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(transactions: List<Transaction>)
 
     @Update
     suspend fun update(transaction: Transaction)

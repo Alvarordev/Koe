@@ -22,11 +22,17 @@ interface RecurringRuleDao {
     @Query("SELECT * FROM recurring_rules WHERE type = :type AND isActive = 1")
     fun getByType(type: RecurringType): Flow<List<RecurringRuleWithDetails>>
 
+    @Query("SELECT * FROM recurring_rules ORDER BY createdAt DESC")
+    suspend fun getAllRaw(): List<RecurringRule>
+
     @Query("SELECT * FROM recurring_rules WHERE nextOccurrence <= :beforeDate AND isActive = 1")
     suspend fun getDueRules(beforeDate: Long): List<RecurringRule>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(rule: RecurringRule): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(rules: List<RecurringRule>)
 
     @Update
     suspend fun update(rule: RecurringRule)

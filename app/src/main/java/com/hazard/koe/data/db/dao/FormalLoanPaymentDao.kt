@@ -20,6 +20,9 @@ interface FormalLoanPaymentDao {
     @Query("SELECT * FROM formal_loan_payments WHERE status = 'PENDING' AND dueDate < :beforeDate")
     fun getOverdue(beforeDate: Long): Flow<List<FormalLoanPayment>>
 
+    @Query("SELECT * FROM formal_loan_payments ORDER BY formalLoanId ASC, paymentNumber ASC")
+    suspend fun getAllRaw(): List<FormalLoanPayment>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(payment: FormalLoanPayment): Long
 

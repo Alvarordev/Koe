@@ -34,8 +34,14 @@ interface CasualLoanDao {
     """)
     fun getSummaryByPerson(): Flow<List<PersonLoanSummary>>
 
+    @Query("SELECT * FROM casual_loans ORDER BY createdAt DESC")
+    suspend fun getAllRaw(): List<CasualLoan>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(loan: CasualLoan): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(loans: List<CasualLoan>)
 
     @Update
     suspend fun update(loan: CasualLoan)

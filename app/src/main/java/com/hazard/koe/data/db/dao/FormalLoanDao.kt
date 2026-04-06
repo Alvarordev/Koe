@@ -23,6 +23,9 @@ interface FormalLoanDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(loan: FormalLoan): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(loans: List<FormalLoan>)
+
     @Update
     suspend fun update(loan: FormalLoan)
 }

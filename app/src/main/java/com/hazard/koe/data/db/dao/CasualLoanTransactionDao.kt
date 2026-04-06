@@ -13,6 +13,12 @@ interface CasualLoanTransactionDao {
     @Query("SELECT * FROM casual_loan_transactions WHERE casualLoanId = :loanId ORDER BY date DESC")
     fun getByLoan(loanId: Long): Flow<List<CasualLoanTransaction>>
 
+    @Query("SELECT * FROM casual_loan_transactions ORDER BY date DESC")
+    suspend fun getAllRaw(): List<CasualLoanTransaction>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(txn: CasualLoanTransaction): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(txns: List<CasualLoanTransaction>)
 }

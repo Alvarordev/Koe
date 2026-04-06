@@ -16,11 +16,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -52,16 +59,75 @@ fun SettingsScreen(
     onDatabaseReset: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel()
 ) {
+    val context = LocalContext.current
     val themePreference by viewModel.themePreference.collectAsStateWithLifecycle()
     val isResetting by viewModel.isResetting.collectAsStateWithLifecycle()
     val resetComplete by viewModel.resetComplete.collectAsStateWithLifecycle()
+    val isExporting by viewModel.isExporting.collectAsStateWithLifecycle()
+    val exportedFile by viewModel.exportedFile.collectAsStateWithLifecycle()
+    val isImporting by viewModel.isImporting.collectAsStateWithLifecycle()
+    val importComplete by viewModel.importComplete.collectAsStateWithLifecycle()
+    val importError by viewModel.importError.collectAsStateWithLifecycle()
     var showResetDialog by remember { mutableStateOf(false) }
+    var showImportDialog by remember { mutableStateOf(false) }
+
+    val importFilePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { viewModel.importData(it) }
+    }
 
     LaunchedEffect(resetComplete) {
         if (resetComplete) {
             viewModel.onResetCompleteHandled()
             onDatabaseReset()
         }
+    }
+
+    LaunchedEffect(importComplete) {
+        if (importComplete) {
+            viewModel.onImportCompleteHandled()
+            onDatabaseReset()
+        }
+    }
+
+    LaunchedEffect(exportedFile) {
+        exportedFile?.let { file ->
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/zip"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(shareIntent, "Exportar datos"))
+            viewModel.onExportHandled()
+        }
+    }
+
+    if (showImportDialog) {
+        ImportDataDialog(
+            isImporting = isImporting,
+            onConfirm = {
+                showImportDialog = false
+                importFilePicker.launch(arrayOf("application/zip"))
+            },
+            onDismiss = {
+                if (!isImporting) showImportDialog = false
+            }
+        )
+    }
+
+    if (importError != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onImportErrorHandled() },
+            title = { Text("Error al importar") },
+            text = { Text(importError ?: "") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.onImportErrorHandled() }) {
+                    Text("Aceptar")
+                }
+            }
+        )
     }
 
     if (showResetDialog) {
@@ -108,6 +174,75 @@ fun SettingsScreen(
                 currentTheme = themePreference,
                 onThemeSelected = viewModel::setThemePreference
             )
+        }
+        item {
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                modifier = Modifier.padding(vertical = 16.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+        }
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = !isExporting) { viewModel.exportData() }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isExporting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = "Exportar datos",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        item {
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+        }
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = !isImporting) { showImportDialog = true }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isImporting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Upload,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = "Importar datos",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
         item {
             HorizontalDivider(
@@ -215,6 +350,56 @@ private fun ThemeOption(
             color = contentColor
         )
     }
+}
+
+@Composable
+private fun ImportDataDialog(
+    isImporting: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            if (isImporting) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Upload,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        },
+        title = {
+            Text(text = if (isImporting) "Importando..." else "Importar datos")
+        },
+        text = {
+            Text(
+                text = if (isImporting) {
+                    "Restaurando datos desde el archivo de respaldo..."
+                } else {
+                    "Se reemplazarán todos los datos actuales con los del archivo de respaldo.\n\nEsta acción no se puede deshacer."
+                }
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                enabled = !isImporting
+            ) {
+                Text("Seleccionar archivo")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isImporting
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
 
 @Composable

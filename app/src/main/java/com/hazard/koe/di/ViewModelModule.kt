@@ -28,7 +28,7 @@ val viewModelModule = module {
     viewModel { (accountId: Long) -> AccountDetailViewModel(accountId, get(), get(), get(), get()) }
     viewModel { CategoriesViewModel(get(), get(), get(), get()) }
     viewModel { (categoryId: Long?) -> AddEditCategoryViewModel(categoryId, get(), get(), get()) }
-    viewModel { SettingsViewModel(get(), get(), get(), androidContext()) }
+    viewModel { SettingsViewModel(get(), get(), get(), get(), get(), androidContext()) }
     viewModel { YapeSetupViewModel(get(), get(), get()) }
     viewModel { TransferViewModel(get(), get(), get(), get()) }
     viewModel { SubscriptionViewModel(get(), get(), get(), get(), get(), get()) }

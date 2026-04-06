@@ -24,8 +24,14 @@ interface UserSubscriptionDao {
     @Query("SELECT * FROM user_subscriptions WHERE id = :id LIMIT 1")
     fun getById(id: Long): Flow<UserSubscription?>
 
+    @Query("SELECT * FROM user_subscriptions ORDER BY billingDay ASC")
+    suspend fun getAllRaw(): List<UserSubscription>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(sub: UserSubscription): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(subs: List<UserSubscription>)
 
     @Update
     suspend fun update(sub: UserSubscription)

@@ -116,6 +116,7 @@ class TransactionRepositoryCreditLimitTest {
         override fun getAllCategorySummariesInPeriod(start: Long, end: Long): Flow<List<CategoryIdSummary>> = flowOf(emptyList())
         override fun getTotalByTypeInPeriod(type: TransactionType, start: Long, end: Long): Flow<Long> = flowOf(0L)
         override suspend fun getLastBySubscriptionId(subscriptionId: Long): Transaction? = null
+        override suspend fun getRecentForVoiceContext(limit: Int): List<Transaction> = emptyList()
         override suspend fun deleteFutureBySubscriptionId(subscriptionId: Long, afterDate: Long) = Unit
         override fun getTransactionsWithCoordinatesByMonth(startMs: Long, endMs: Long): Flow<List<TransactionWithMapData>> = flowOf(emptyList())
         override suspend fun insert(transaction: Transaction): Long {
